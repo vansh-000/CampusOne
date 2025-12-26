@@ -4,7 +4,6 @@
   "description": "Backend Server for CampusOne",
   "main": "src/server.js",
   "type": "module",
-  "devDependencies": {},
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
@@ -26,6 +25,7 @@
     "body-parser": "^2.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
