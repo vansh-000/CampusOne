@@ -1,16 +1,14 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import institutionRoutes from './routes/institution.routes.js';
 
-dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 3000;
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const PORT = process.env.PORT ;
 
 app.use(cors({
-  origin: frontendUrl,
+  origin: process.env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 }));
@@ -20,7 +18,9 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(express.static('public'));
 
+app.use('/api/institutions', institutionRoutes);
 
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({

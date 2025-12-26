@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-dotenv.config();
 
 const apiKey = process.env.MAILJET_API_KEY;
 const secretKey = process.env.MAILJET_SECRET;
