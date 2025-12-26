@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend Server for CampusOne",
   "main": "src/server.js",
+  "type": "module",
   "devDependencies": {},
   "scripts": {
     "start": "node src/server.js",
