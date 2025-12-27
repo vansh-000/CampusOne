@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import institutionRoutes from './routes/institution.routes.js';
+import userRoutes from './routes/user.routes.js';
 
 const app = express();
 const PORT = process.env.PORT ;
@@ -21,6 +22,7 @@ app.use(cookieParser());
 app.use(express.static('public'));
 
 app.use('/api/institutions', institutionRoutes);
+app.use('/api/users', userRoutes);
 
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
