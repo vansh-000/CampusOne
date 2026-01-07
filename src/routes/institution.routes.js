@@ -9,6 +9,7 @@ import {
     sendInstitutionEmailVerification,
     verifyInstitutionEmail,
     updateInstitutionAvatar,
+    updateInstitution,
 } from "../controllers/institution.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -37,6 +38,11 @@ router.post(
     validateInstitutionJWT,
     upload.single("avatar"),
     updateInstitutionAvatar
+);
+router.put(
+    "/update",
+    validateInstitutionJWT,
+    updateInstitution
 );
 
 export default router;

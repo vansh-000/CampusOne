@@ -7,6 +7,7 @@ import sendEmail from "../utils/sendEmail.js";
 import { cookiesOptions } from "../utils/cookiesOptions.js";
 import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
+import Faculty from '../models/faculty.model';
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, phone, password, role } = req.body;
@@ -15,12 +16,13 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError("All fields are required", 400);
   }
 
-  const exists = await User.findOne({
-    $or: [{ email }, { phone }],
-  });
-
-  if (exists) {
-    throw new ApiError("User already exists", 409);
+  const existingPhone = await User.findOne({ phone });
+  if (existingPhone) {
+    throw new ApiError("Phone number already in use", 400);
+  }
+  const existingEmail = await User.findOne({ email });
+  if (existingEmail) {
+    throw new ApiError("Email already in use", 400);
   }
 
   const user = await User.create({
@@ -89,6 +91,45 @@ const logoutUser = asyncHandler(async (req, res) => {
   res
     .clearCookie("accessToken", cookiesOptions)
     .json(new ApiResponse("Logged out successfully", 200));
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const {
+    name,
+    phone
+  } = req.body;
+
+  const updates = {};
+  if (name) {
+    throw new ApiError("Name cannot be updated", 400);
+  }
+  if (phone) {
+    const existingPhone = await User.findOne({ phone, _id: { $ne: userId } });
+    if (existingPhone) {
+      throw new ApiError("Phone number already in use", 400);
+    }
+    updates.phone = phone;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError("No valid fields provided for update", 400);
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    updates,
+    {
+      new: true,
+      select: "-password -accessToken -resetPasswordToken -emailVerificationToken",
+    }
+  );
+
+  if (!updatedUser) {
+    throw new ApiError("User not found", 404);
+  }
+
+  res.json(new ApiResponse("User updated successfully", 200, updatedUser));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
@@ -248,6 +289,25 @@ const updateUserAvatar = asyncHandler(async (req, res, next) => {
   streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
+// get faculty by userId
+const getFacultyByUserId = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError("User not found", 404);
+  }
+  if (!user.role || user.role !== 'faculty') {
+    throw new ApiError("User is not a faculty member", 400);
+  }
+  const faculty = await Faculty.findOne({ userId: userId }).populate('institutionId departmentId courses');
+  if (!faculty) {
+    throw new ApiError("Faculty not found", 404);
+  }
+
+  res.json(new ApiResponse("Faculty ID fetched successfully", 200, faculty));
+});
+
 export {
   registerUser,
   loginUser,
@@ -258,4 +318,6 @@ export {
   sendUserEmailVerification,
   verifyUserEmail,
   updateUserAvatar,
+  getFacultyByUserId,
+  updateUser
 };
