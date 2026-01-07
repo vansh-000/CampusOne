@@ -11,6 +11,8 @@ import {
     sendUserEmailVerification,
     verifyUserEmail,
     updateUserAvatar,
+    updateUser,
+    getFacultyByUserId,
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -35,6 +37,16 @@ router.post(
     validateUserJWT,
     upload.single("avatar"),
     updateUserAvatar
+);
+router.put(
+    "/update",
+    validateUserJWT,
+    updateUser
+);
+router.get(
+    "/faculty",
+    validateUserJWT,
+    getFacultyByUserId
 );
 
 export default router;

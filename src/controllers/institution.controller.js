@@ -48,6 +48,11 @@ const registerInstitution = asyncHandler(async (req, res) => {
     throw new ApiError("Contact phone already in use", 409);
   }
 
+  const nameExists = await Institution.findOne({ name });
+  if (nameExists) {
+    throw new ApiError("Institution name already in use", 409);
+  }
+
   const institution = await Institution.create({
     name,
     code,
@@ -119,6 +124,99 @@ const logoutInstitution = asyncHandler(async (req, res) => {
   res
     .clearCookie("accessToken", cookiesOptions)
     .json(new ApiResponse("Logged out successfully", 200));
+});
+
+const updateInstitution = asyncHandler(async (req, res) => {
+  const institutionId = req.institution._id;
+
+  const {
+    name,
+    code,
+    address,
+    establishedYear,
+    contactEmail,
+    contactPhone,
+    type
+  } = req.body;
+
+  if (contactEmail) {
+    const emailExists = await Institution.findOne({
+      contactEmail,
+      _id: { $ne: institutionId }
+    });
+
+    if (emailExists) {
+      throw new ApiError("Email already in use", 409);
+    }
+  }
+
+  if (code) {
+    const codeExists = await Institution.findOne({
+      code,
+      _id: { $ne: institutionId }
+    });
+
+    if (codeExists) {
+      throw new ApiError("Institution code already in use", 409);
+    }
+  }
+
+  if (contactPhone) {
+    const phoneExists = await Institution.findOne({
+      contactPhone,
+      _id: { $ne: institutionId }
+    });
+
+    if (phoneExists) {
+      throw new ApiError("Contact phone already in use", 409);
+    }
+  }
+
+  if (name) {
+    const nameExists = await Institution.findOne({
+      name,
+      _id: { $ne: institutionId }
+    });
+
+    if (nameExists) {
+      throw new ApiError("Institution name already in use", 409);
+    }
+  }
+
+  const updates = {};
+  if (name) updates.name = name;
+  if (code) updates.code = code;
+  if (address) updates.address = address;
+  if (establishedYear) updates.establishedYear = establishedYear;
+  if (contactEmail) updates.contactEmail = contactEmail;
+  if (contactPhone) updates.contactPhone = contactPhone;
+  if (type) updates.type = type;
+
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError("No valid fields provided for update", 400);
+  }
+
+  const updatedInstitution = await Institution.findByIdAndUpdate(
+    institutionId,
+    updates,
+    {
+      new: true,
+      runValidators: true,
+      select: "-password -resetPasswordToken -emailVerificationToken"
+    }
+  );
+
+  if (!updatedInstitution) {
+    throw new ApiError("Institution not found", 404);
+  }
+
+  res.json(
+    new ApiResponse(
+      "Institution updated successfully",
+      200,
+      updatedInstitution
+    )
+  );
 });
 
 const getCurrentInstitution = asyncHandler(async (req, res) => {
@@ -299,5 +397,6 @@ export {
   resetInstitutionPassword,
   sendInstitutionEmailVerification,
   verifyInstitutionEmail,
-  updateInstitutionAvatar
+  updateInstitutionAvatar,
+  updateInstitution
 };
