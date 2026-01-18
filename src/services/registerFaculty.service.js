@@ -1,5 +1,5 @@
 import { User } from "../models/user.model.js";
-import Faculty from "../models/faculty.model.js";
+import { Faculty } from "../models/faculty.model.js";
 import { Institution } from "../models/institution.model.js";
 import Department from "../models/department.model.js";
 import Course from "../models/course.model.js";

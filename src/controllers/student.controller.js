@@ -8,7 +8,7 @@ const createStudent = asyncHandler(async (req, res) => {
     const {
         userId,
         institutionId,
-        departmentId,
+        branchId,
         enrollmentNumber,
         courseIds,
         semester,
@@ -20,7 +20,7 @@ const createStudent = asyncHandler(async (req, res) => {
     if (
         !userId ||
         !institutionId ||
-        !departmentId ||
+        !branchId ||
         !enrollmentNumber ||
         !semester ||
         !admissionYear
@@ -42,7 +42,7 @@ const createStudent = asyncHandler(async (req, res) => {
     const student = await Student.create({
         userId,
         institutionId,
-        departmentId,
+        branchId,
         enrollmentNumber,
         courseIds: courseIds || [],
         semester,
@@ -84,7 +84,7 @@ const getStudentsByInstitution = asyncHandler(async (req, res) => {
 
     const students = await Student.find({ institutionId })
         .populate("userId", "name email phone")
-        .populate("departmentId", "name")
+        .populate("branchId", "name")
         .populate("courseIds", "name code");
 
     res.json(
@@ -92,10 +92,10 @@ const getStudentsByInstitution = asyncHandler(async (req, res) => {
     );
 });
 
-const getStudentsByDepartment = asyncHandler(async (req, res) => {
-    const { departmentId } = req.params;
+const getStudentsByBranch = asyncHandler(async (req, res) => {
+    const { branchId } = req.params;
 
-    const students = await Student.find({ departmentId })
+    const students = await Student.find({ branchId })
         .populate("userId", "name email")
         .populate("courseIds", "name code");
 
@@ -110,7 +110,7 @@ const getStudentById = asyncHandler(async (req, res) => {
     const student = await Student.findById(studentId)
         .populate("userId", "name email phone")
         .populate("institutionId", "name")
-        .populate("departmentId", "name")
+        .populate("branchId", "name")
         .populate("courseIds", "name code");
 
     if (!student) {
@@ -136,17 +136,17 @@ const deleteStudent = asyncHandler(async (req, res) => {
     );
 });
 
-const updateStudentDepartment = asyncHandler(async (req, res) => {
+const updateStudentBranch = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
-    const { departmentId } = req.body;
+    const { branchId } = req.body;
 
-    if (!departmentId) {
-        throw new ApiError("Department ID is required", 400);
+    if (!branchId) {
+        throw new ApiError("Branch ID is required", 400);
     }
 
     const student = await Student.findByIdAndUpdate(
         studentId,
-        { departmentId },
+        { branchId },
         { new: true }
     );
 
@@ -155,7 +155,7 @@ const updateStudentDepartment = asyncHandler(async (req, res) => {
     }
 
     res.json(
-        new ApiResponse("Department updated successfully", 200, student)
+        new ApiResponse("Branch updated successfully", 200, student)
     );
 });
 
@@ -255,10 +255,10 @@ export {
     createStudent,
     editStudent,
     getStudentsByInstitution,
-    getStudentsByDepartment,
+    getStudentsByBranch,
     getStudentById,
     deleteStudent,
-    updateStudentDepartment,
+    updateStudentBranch,
     updateStudentCourses,
     updateStudentSemester,
     updateHostelStatus

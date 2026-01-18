@@ -31,9 +31,9 @@ const studentSchema = new mongoose.Schema(
             ref: 'Institution',
             required: true
         },
-        departmentId: {
+        branchId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Department',
+            ref: 'Branch',
             required: true
         },
         enrollmentNumber: {

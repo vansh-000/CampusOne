@@ -3,11 +3,11 @@ import {
     createStudent,
     deleteStudent,
     editStudent,
-    getStudentsByDepartment,
+    getStudentsByBranch,
     getStudentsByInstitution,
     getStudentById,
     updateStudentCourses,
-    updateStudentDepartment,
+    updateStudentBranch,
     updateHostelStatus,
     updateStudentSemester
 } from "../controllers/student.controller.js";
@@ -37,9 +37,9 @@ router.get(
     getStudentsByInstitution
 );
 router.get(
-    "/department/:departmentId",
+    "/branch/:branchId",
     validateInstitutionJWT,
-    getStudentsByDepartment
+    getStudentsByBranch
 );
 router.delete(
     "/delete-student/:studentId",
@@ -47,9 +47,9 @@ router.delete(
     deleteStudent
 );
 router.put(
-    "/update-department/:studentId",
+    "/update-branch/:studentId",
     validateInstitutionJWT,
-    updateStudentDepartment
+    updateStudentBranch
 );
 router.put(
     "/update-courses/:studentId",

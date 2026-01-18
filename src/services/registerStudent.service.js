@@ -1,7 +1,7 @@
 import Student from "../models/student.model.js";
 import { User } from "../models/user.model.js";
 import { Institution } from "../models/institution.model.js";
-import Department from "../models/department.model.js";
+import { Branch } from "../models/branch.model.js";
 import Course from "../models/course.model.js";
 
 export const registerStudentService = async (payload) => {
@@ -11,7 +11,7 @@ export const registerStudentService = async (payload) => {
     phone,
     password,
     institutionCode,
-    departmentCode,
+    branchCode,
     enrollmentNumber,
     courseCodes,
     semester,
@@ -22,7 +22,7 @@ export const registerStudentService = async (payload) => {
 
   if (
     !name || !email || !phone || !password ||
-    !institutionCode || !departmentCode ||
+    !institutionCode || !branchCode ||
     !semester || !admissionYear || !enrollmentNumber
   ) {
     throw new Error("Required fields missing");
@@ -37,8 +37,8 @@ export const registerStudentService = async (payload) => {
   const institution = await Institution.findOne({ code: institutionCode });
   if (!institution) throw new Error("Invalid institution code");
 
-  const department = await Department.findOne({ code: departmentCode });
-  if (!department) throw new Error("Invalid department code");
+  const branch = await Branch.findOne({ code: branchCode });
+  if (!branch) throw new Error("Invalid branch code");
 
   let courses = [];
   if (courseCodes) {
@@ -65,7 +65,7 @@ export const registerStudentService = async (payload) => {
     student = await Student.create({
       userId: user._id,
       institutionId: institution._id,
-      departmentId: department._id,
+      branchId: branch._id,
       enrollmentNumber,
       courseIds: courses.map(c => c._id),
       semester,
