@@ -2,17 +2,30 @@ import Department from "../models/department.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { Faculty } from '../models/faculty.model';
 
 const createDepartment = asyncHandler(async (req, res) => {
-  const { institutionId, name, code, contactEmail } = req.body;
+  const { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
 
   if (!institutionId || !name || !code || !contactEmail) {
     throw new ApiError("All fields are required", 400);
   }
 
-  const exists = await Department.findOne({ code });
+  if (headOfDepartment) {
+    const faculty = await Faculty.findById(headOfDepartment);
+    if (!faculty) {
+      throw new ApiError("Faculty not found", 404);
+    }
+
+    const facultyExists = await Department.findOne({ headOfDepartment });
+    if (facultyExists) {
+      throw new ApiError("This faculty is already assigned as head of another department", 409);
+    }
+  }
+
+  const exists = await Department.findOne({ code, institutionId });
   if (exists) {
-    throw new ApiError("Department with this code already exists", 409);
+    throw new ApiError("Department with this code already exists in your institution", 409);
   }
 
   const department = await Department.create({
