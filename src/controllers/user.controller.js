@@ -70,6 +70,11 @@ const loginUser = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id).select(
     "-password -resetPasswordToken -emailVerificationToken"
   );
+  const facultyDetails = user.role === 'Faculty' ? await Faculty.findOne({ userId: user._id }).populate('institutionId departmentId courses') : null;
+  if (facultyDetails) {
+    loggedInUser.facultyDetails = facultyDetails;
+  }
+  const studentDetails = user.role === 'Student' ? await Student.findOne({ userId: user._id }).populate('institutionId departmentId courseIds') : null;
 
   res
     .cookie("accessToken", accessToken, cookiesOptions)
