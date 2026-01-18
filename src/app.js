@@ -14,7 +14,7 @@ import branchRoutes from './routes/branch.routes.js';
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL?.split(','),
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 }));
