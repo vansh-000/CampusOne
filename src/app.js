@@ -9,6 +9,7 @@ import departmentRoutes from './routes/department.routes.js';
 import courseRoutes from './routes/course.routes.js';
 import studentRoutes from './routes/student.routes.js';
 import importRoutes from './routes/import.route.js';
+import branchRoutes from './routes/branch.routes.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/courses", courseRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/branches',branchRoutes);
 
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
