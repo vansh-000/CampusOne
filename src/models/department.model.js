@@ -32,5 +32,9 @@ const departmentSchema = new mongoose.Schema(
     }
 );
 
+departmentSchema.index({ institutionId: 1 });
+departmentSchema.index({ headOfDepartment: 1 }, { unique: true });
+departmentSchema.index({ code: 1, institutionId: 1 }, { unique: true });
+
 const Department = mongoose.model('Department', departmentSchema);
 export default Department;

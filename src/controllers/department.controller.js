@@ -2,7 +2,7 @@ import Department from "../models/department.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Faculty } from '../models/faculty.model';
+import { Faculty } from '../models/faculty.model.js';
 
 const createDepartment = asyncHandler(async (req, res) => {
   const { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
