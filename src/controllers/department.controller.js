@@ -18,7 +18,7 @@ const createDepartment = asyncHandler(async (req, res) => {
     }
 
     const facultyExists = await Department.findOne({ headOfDepartment });
-    if (facultyExists) {
+    if (facultyExists && headOfDepartment !== null) {
       throw new ApiError("This faculty is already assigned as head of another department", 409);
     }
   }
