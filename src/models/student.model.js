@@ -22,40 +22,45 @@ const studentSchema = new mongoose.Schema(
     {
         userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
-            unique: true
+            ref: "User",
+            required: true
         },
         institutionId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Institution',
+            ref: "Institution",
             required: true
         },
         branchId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Branch',
+            ref: "Branch",
             required: true
         },
         enrollmentNumber: {
             type: String,
             required: true,
-            unique: true,
             trim: true
         },
-        courseIds: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Course'
-        }],
-        prevCourses: [{
-            courseId: {
+        courseIds: {
+            type: [{
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Course'
-            },
-            semester: {
-                type: Number,
-                required: true
-            }
-        }],
+                ref: "Course"
+            }],
+            default: []
+        },
+        prevCourses: {
+            type: [{
+                courseId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Course",
+                    required: true
+                },
+                semester: {
+                    type: Number,
+                    required: true
+                }
+            }],
+            default: []
+        },
         semester: {
             type: Number,
             required: true
@@ -68,25 +73,36 @@ const studentSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        guardianDetails: [guardianDetailSchema]
+
+        guardianDetails: {
+            type: [guardianDetailSchema],
+            default: []
+        }
     },
     {
         timestamps: true
     }
 );
 
-
-studentSchema.index({ branchId: 1 });
-studentSchema.index({ courseIds: 1 });
-studentSchema.index({ "prevCourses.courseId": 1 });
-studentSchema.index({ enrollmentNumber: 1 }, { unique: true });
 studentSchema.index({ userId: 1 }, { unique: true });
 
+studentSchema.index(
+    { institutionId: 1, enrollmentNumber: 1 },
+    { unique: true }
+);
 studentSchema.index({
     institutionId: 1,
     courseIds: 1,
     branchId: 1,
     admissionYear: 1
+});
+studentSchema.index({
+    institutionId: 1,
+    courseIds: 1
+});
+studentSchema.index({
+    institutionId: 1,
+    "prevCourses.courseId": 1
 });
 
 export const Student = mongoose.model("Student", studentSchema);
