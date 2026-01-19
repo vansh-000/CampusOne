@@ -33,9 +33,15 @@ const departmentSchema = new mongoose.Schema(
 departmentSchema.index({ institutionId: 1 });
 
 departmentSchema.index(
-    { headOfDepartment: 1 },
-    { unique: true, partialFilterExpression: { headOfDepartment: { $ne: null } } }
+  { headOfDepartment: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      headOfDepartment: { $exists: true, $type: "objectId" }
+    }
+  }
 );
+
 departmentSchema.index({ code: 1, institutionId: 1 }, { unique: true });
 
 const Department = mongoose.model('Department', departmentSchema);
