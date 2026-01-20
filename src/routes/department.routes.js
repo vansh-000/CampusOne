@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
 import {
+    checkDepartmentCodeExists,
     createDepartment,
     deleteDepartment,
     getDepartmentById,
@@ -13,6 +14,7 @@ const router = Router();
 //public routes
 router.get("/institution/:institutionId", getDepartmentsByInstitution);
 router.get("/:departmentId", getDepartmentById);
+router.get("/code-exists", validateInstitutionJWT, checkDepartmentCodeExists);
 
 //protected routes
 router.post("/create-department", validateInstitutionJWT, createDepartment);
