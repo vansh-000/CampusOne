@@ -9,7 +9,8 @@ import {
     updateStudentCourses,
     updateStudentBranch,
     updateHostelStatus,
-    updateStudentSemester
+    updateStudentSemester,
+    modifyActiveStatus
 } from "../controllers/student.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -80,6 +81,11 @@ router.put(
     "/update-hostel-statusById/:studentId",
     validateUserJWT,
     updateHostelStatus
+);
+router.put(
+    "/change-status/:studentId",
+    validateInstitutionJWT,
+    modifyActiveStatus
 );
 
 export default router;

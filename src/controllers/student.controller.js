@@ -1,4 +1,4 @@
-import {Student} from "../models/student.model.js";
+import { Student } from "../models/student.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -95,7 +95,7 @@ const getStudentsByInstitution = asyncHandler(async (req, res) => {
 const getStudentsByBranch = asyncHandler(async (req, res) => {
     const { branchId } = req.params;
 
-    const students = await Student.find({ branchId })
+    const students = await Student.find({ branchId, isActive: true })
         .populate("userId", "name email")
         .populate("courseIds", "name code");
 
@@ -251,6 +251,33 @@ const updateHostelStatus = asyncHandler(async (req, res) => {
     );
 });
 
+const modifyActiveStatus = asyncHandler(async (req, res) => {
+    const { studentId } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+        throw new ApiError("isActive must be boolean", 400);
+    }
+
+    const student = await Student.findByIdAndUpdate(
+        studentId,
+        { isActive },
+        { new: true }
+    );
+
+    if (!student) {
+        throw new ApiError("Student not found", 404);
+    }
+
+    res.json(
+        new ApiResponse(
+            `Student has been ${isActive ? "activated" : "deactivated"}`,
+            200,
+            student
+        )
+    );
+});
+
 export {
     createStudent,
     editStudent,
@@ -261,5 +288,6 @@ export {
     updateStudentBranch,
     updateStudentCourses,
     updateStudentSemester,
-    updateHostelStatus
+    updateHostelStatus,
+    modifyActiveStatus
 };
