@@ -16,7 +16,6 @@ const courseSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            unique: true
         },
         credits: {
             type: Number,
@@ -27,11 +26,21 @@ const courseSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true
+        },
+        isOpen: {
+            type: Boolean,
+            default: true
         }
     },
     {
         timestamps: true
     }
+);
+
+courseSchema.index({ departmentId: 1 });
+courseSchema.index(
+    { code: 1, departmentId: 1 },
+    { unique: true }
 );
 
 const Course = mongoose.model('Course', courseSchema);
