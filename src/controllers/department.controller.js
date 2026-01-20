@@ -70,20 +70,66 @@ const getDepartmentById = asyncHandler(async (req, res) => {
 
 const updateDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
+  const { name, code, headOfDepartment, contactEmail } = req.body;
 
-  const department = await Department.findByIdAndUpdate(
-    departmentId,
-    req.body,
-    { new: true }
-  );
-
+  const department = await Department.findById(departmentId);
   if (!department) {
     throw new ApiError("Department not found", 404);
   }
+  if (code && code !== department.code) {
+    const exists = await Department.findOne({
+      code,
+      institutionId: department.institutionId,
+      _id: { $ne: departmentId },
+    });
 
+    if (exists) {
+      throw new ApiError(
+        "Department with this code already exists in this institution",
+        409
+      );
+    }
+
+    department.code = code;
+  }
+  if (headOfDepartment) {
+    const faculty = await Faculty.findById(headOfDepartment);
+    if (!faculty) {
+      throw new ApiError("Faculty not found", 404);
+    }
+    const facultyExists = await Department.findOne({ headOfDepartment });
+    if (facultyExists && headOfDepartment !== null) {
+      throw new ApiError("This faculty is already assigned as head of another department", 409);
+    }
+  }
+  if (contactEmail !== undefined) {
+    department.contactEmail = contactEmail;
+  }
+  if (name !== undefined) {
+    department.name = name;
+  }
+  await department.save();
   res.json(
     new ApiResponse("Department updated successfully", 200, department)
   );
+});
+
+const checkDepartmentCodeExists = asyncHandler(async (req, res) => {
+  const { institutionId, code } = req.body;
+  if(!code){
+    throw new ApiError("Department code is required", 400);
+  }
+
+  const exists = await Department.findOne({ code, institutionId });
+  if (exists) {
+    return res.json(
+      new ApiResponse("Department code already exists", 200, { exists: true })
+    );
+  } else {
+    return res.json(
+      new ApiResponse("Department code is available", 200, { exists: false })
+    );
+  }
 });
 
 const deleteDepartment = asyncHandler(async (req, res) => {
@@ -106,4 +152,5 @@ export {
   getDepartmentById,
   updateDepartment,
   deleteDepartment,
+  checkDepartmentCodeExists
 };
