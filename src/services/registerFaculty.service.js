@@ -35,7 +35,8 @@ export const registerFacultyService = async (payload) => {
     let courseIds = [];
     if (courseCodes && courseCodes.length) {
         const codes = courseCodes.split(",").map(s => s.trim());
-        const courses = await Course.find({ code: { $in: codes }, departmentId: department._id });
+        // check if all course is active and belong to the department
+        const courses = await Course.find({ code: { $in: codes }, departmentId: department._id, isActive: true });
         if (courses.length !== codes.length) throw new Error("Some course codes not found");
         courseIds = courses.map(c => c._id);
     }
