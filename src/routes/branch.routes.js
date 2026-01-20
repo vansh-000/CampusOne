@@ -1,17 +1,25 @@
 import { Router } from 'express';
-import { changeBranchStatus, createBranch, deleteBranch, getBranchByDepartment, getBranchById, getBranchesByInstitution, updateBranch } from '../controllers/branch.controller.js';
+import {
+  changeBranchStatus,
+  createBranch,
+  deleteBranch,
+  getBranchByDepartment,
+  getBranchById,
+  getBranchesByInstitution,
+  updateBranch
+} from '../controllers/branch.controller.js';
 
 const router = Router();
 
 // public routes
-router.get('/:institutionId', getBranchesByInstitution);
-router.get('/:branchId', getBranchById);
-router.get('/:departmentId', getBranchByDepartment);
+router.get('/institutions/:institutionId/branches', getBranchesByInstitution);
+router.get('/branches/:branchId', getBranchById);
+router.get('/departments/:departmentId/branches', getBranchByDepartment);
 
-// private routes
-router.post('/:institutionId', createBranch);
-router.put('/:branchId', updateBranch);
-router.delete('/:branchId', deleteBranch);
-router.patch('/status/:branchId', changeBranchStatus);
+
+router.post('/institutions/:institutionId/branches', createBranch);
+router.put('/branches/:branchId', updateBranch);
+router.delete('/branches/:branchId', deleteBranch);
+router.patch('/branches/:branchId/status', changeBranchStatus);
 
 export default router;
