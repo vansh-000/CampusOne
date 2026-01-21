@@ -1,9 +1,10 @@
-import {Faculty} from "../models/faculty.model.js";
+import { Faculty } from "../models/faculty.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Department from "../models/department.model.js";
 import mongoose from "mongoose";
+import { User } from '../models/user.model';
 
 const createFaculty = asyncHandler(async (req, res) => {
     const {
@@ -118,11 +119,18 @@ const getFacultyById = asyncHandler(async (req, res) => {
 const deleteFaculty = asyncHandler(async (req, res) => {
     const { facultyId } = req.params;
 
-    const faculty = await Faculty.findByIdAndDelete(facultyId);
+    const facultyExists = await Faculty.findById(facultyId);
 
-    if (!faculty) {
+    if (!facultyExists) {
         throw new ApiError("Faculty not found", 404);
     }
+    // find user for faculty and delete the user as well
+    const user = await User.findById(facultyExists.userId);
+    if (!user) {
+        throw new ApiError("User not found for this faculty", 404);
+    }
+    await Faculty.findByIdAndDelete(facultyId);
+    await User.findByIdAndDelete(user._id);
 
     res.json(
         new ApiResponse("Faculty deleted successfully", 200)

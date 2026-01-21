@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Department from "../models/department.model.js";
 import { Faculty } from "../models/faculty.model.js";
+import mongoose from "mongoose";
 
 const createCourse = asyncHandler(async (req, res) => {
   const { departmentId, name, code, credits, semester } = req.body;

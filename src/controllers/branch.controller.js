@@ -122,7 +122,10 @@ const deleteBranch = asyncHandler(async (req, res) => {
     const branch = await Branch.findById(branchId);
     if (!branch) throw new ApiError("Branch not found", 404);
 
-    // TODO: block deletion if students/courses depend on it
+    const students = await mongoose.model("Student").findOne({ branchId });
+    if (students) {
+        throw new ApiError("Cannot delete branch with enrolled students", 400);
+    }
     await branch.deleteOne();
 
     res.json(new ApiResponse("Branch deleted successfully", 200));
@@ -143,6 +146,11 @@ const changeBranchStatus = asyncHandler(async (req, res) => {
 
     const branch = await Branch.findById(branchId);
     if (!branch) throw new ApiError("Branch not found", 404);
+
+    const students = await mongoose.model("Student").findOne({ branchId });
+    if (students && !isOpen) {
+        throw new ApiError("Cannot close branch with enrolled students", 400);
+    }
 
     branch.isOpen = isOpen;
     await branch.save();
