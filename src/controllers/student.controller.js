@@ -125,12 +125,18 @@ const getStudentById = asyncHandler(async (req, res) => {
 const deleteStudent = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
 
-    const student = await Student.findByIdAndDelete(studentId);
-
+    const student = await Student.findById(studentId);
     if (!student) {
         throw new ApiError("Student not found", 404);
     }
 
+    // delete associated user
+    const user = await User.findById(student.userId);
+    if (!user) {
+        throw new ApiError("User not found for this student", 404);
+    }
+    await Student.findByIdAndDelete(studentId);
+    await User.findByIdAndDelete(user._id);
     res.json(
         new ApiResponse("Student deleted successfully", 200)
     );
