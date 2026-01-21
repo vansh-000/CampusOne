@@ -14,11 +14,12 @@ import {
     updateUser,
     getFacultyByUserId,
 } from "../controllers/user.controller.js";
+import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
 
 const router = Router();
 
 // PUBLIC ROUTES
-router.post("/register", registerUser);
+router.post("/register",validateInstitutionJWT, registerUser);
 router.post("/login", loginUser);
 router.post("/forgot-password", forgotUserPassword);
 router.post("/reset-password/:token", resetUserPassword);

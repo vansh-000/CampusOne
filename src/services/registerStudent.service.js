@@ -1,4 +1,4 @@
-import {Student} from "../models/student.model.js";
+import { Student } from "../models/student.model.js";
 import { User } from "../models/user.model.js";
 import { Institution } from "../models/institution.model.js";
 import { Branch } from "../models/branch.model.js";
@@ -43,7 +43,8 @@ export const registerStudentService = async (payload) => {
   let courses = [];
   if (courseCodes) {
     const codesArray = courseCodes.split(",").map(c => c.trim());
-    courses = await Course.find({ code: { $in: codesArray } });
+    // check if all course is active
+    courses = await Course.find({ code: { $in: codesArray }, isActive: true });
     if (courses.length !== codesArray.length) {
       throw new Error("Some course codes are invalid");
     }
