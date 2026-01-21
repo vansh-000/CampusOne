@@ -39,6 +39,29 @@ const getCoursesByDepartment = asyncHandler(async (req, res) => {
   );
 });
 
+const getCourseByInstitution = asyncHandler(async (req, res) => {
+  const { institutionId } = req.params;
+
+  const courses = await Course.aggregate([
+    {
+      $lookup: {
+        from: "departments",
+        localField: "departmentId",
+        foreignField: "_id",
+        as: "department"
+      }
+    },
+    { $unwind: "$department" },
+    { $match: { "department.institutionId": new mongoose.Types.ObjectId(institutionId) } }
+  ]);
+
+  res.json(
+    new ApiResponse("Courses fetched", 200, courses)
+  );
+});
+
+
+
 const getCourseById = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
 
@@ -149,5 +172,6 @@ export {
   getCourseById,
   updateCourse,
   deleteCourse,
-  modifyStatus
+  modifyStatus,
+  getCourseByInstitution
 };

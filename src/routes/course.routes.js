@@ -4,6 +4,7 @@ import {
     createCourse,
     deleteCourse,
     getCourseById,
+    getCourseByInstitution,
     getCoursesByDepartment,
     modifyStatus,
     updateCourse
@@ -14,6 +15,7 @@ const router = Router();
 
 // Public Routes
 router.get("/department/:departmentId", getCoursesByDepartment);
+router.get("/institution/:institutionId", getCourseByInstitution);
 router.get("/:courseId", getCourseById);
 
 // Protected Routes
