@@ -3,6 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Faculty } from '../models/faculty.model.js';
+import Course from '../models/course.model.js';
+import { Branch } from "../models/branch.model.js";
 
 const createDepartment = asyncHandler(async (req, res) => {
   const { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
@@ -116,7 +118,7 @@ const updateDepartment = asyncHandler(async (req, res) => {
 
 const checkDepartmentCodeExists = asyncHandler(async (req, res) => {
   const { institutionId, code } = req.body;
-  if(!code){
+  if (!code) {
     throw new ApiError("Department code is required", 400);
   }
 
@@ -135,11 +137,23 @@ const checkDepartmentCodeExists = asyncHandler(async (req, res) => {
 const deleteDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
 
-  const department = await Department.findByIdAndDelete(departmentId);
-
+  const department = await Department.findById(departmentId);
   if (!department) {
     throw new ApiError("Department not found", 404);
   }
+  const facultyAssigned = await Faculty.findOne({ departmentId });
+  if (facultyAssigned) {
+    throw new ApiError("Cannot delete department assigned to faculty", 400);
+  }
+  const courseAssigned = await Course.findOne({ departmentId });
+  if (courseAssigned) {
+    throw new ApiError("Cannot delete department assigned to courses", 400);
+  }
+  const branchAssigned = await Branch.findOne({ departmentId });
+  if (branchAssigned) {
+    throw new ApiError("Cannot delete department assigned to branches", 400);
+  }
+  await department.remove();
 
   res.json(
     new ApiResponse("Department deleted successfully", 200)
