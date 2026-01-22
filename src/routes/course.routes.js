@@ -3,6 +3,10 @@ import { validateInstitutionJWT } from '../middlewares/institutionAuth.middlewar
 import {
     createCourse,
     deleteCourse,
+    findFacultiesByCourseAndBatch,
+    findFacultiesByPrevCourseAndBatch,
+    findFacultyByCourseId,
+    findFacultyByPrevCourseId,
     getCourseById,
     getCourseByInstitution,
     getCoursesByDepartment,
@@ -17,6 +21,10 @@ const router = Router();
 router.get("/department/:departmentId", getCoursesByDepartment);
 router.get("/institution/:institutionId", getCourseByInstitution);
 router.get("/:courseId", getCourseById);
+router.get("/faculty/course/:courseId", findFacultyByCourseId);
+router.get("/faculty/prev-course/:courseId", findFacultyByPrevCourseId);
+router.get("/faculty/course/:courseId/batch/:batch", findFacultiesByCourseAndBatch);
+router.get("/faculty/prev-course/:courseId/batch/:batch", findFacultiesByPrevCourseAndBatch);
 
 // Protected Routes
 router.post("/create-course", validateInstitutionJWT, createCourse);

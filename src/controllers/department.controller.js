@@ -72,7 +72,7 @@ const getDepartmentById = asyncHandler(async (req, res) => {
 
 const updateDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
-  const { name, code, headOfDepartment, contactEmail } = req.body;
+  const { name, code, contactEmail } = req.body;
 
   const department = await Department.findById(departmentId);
   if (!department) {
@@ -94,16 +94,6 @@ const updateDepartment = asyncHandler(async (req, res) => {
 
     department.code = code;
   }
-  if (headOfDepartment) {
-    const faculty = await Faculty.findById(headOfDepartment);
-    if (!faculty) {
-      throw new ApiError("Faculty not found", 404);
-    }
-    const facultyExists = await Department.findOne({ headOfDepartment });
-    if (facultyExists && headOfDepartment !== null) {
-      throw new ApiError("This faculty is already assigned as head of another department", 409);
-    }
-  }
   if (contactEmail !== undefined) {
     department.contactEmail = contactEmail;
   }
@@ -113,6 +103,49 @@ const updateDepartment = asyncHandler(async (req, res) => {
   await department.save();
   res.json(
     new ApiResponse("Department updated successfully", 200, department)
+  );
+});
+
+const addHod = asyncHandler(async (req, res) => {
+  const { departmentId } = req.params;
+  const { headOfDepartment } = req.body;
+
+  const department = await Department.findById(departmentId);
+  if (!department) {
+    throw new ApiError("Department not found", 404);
+  }
+
+  const faculty = await Faculty.findById(headOfDepartment);
+  if (!faculty) {
+    throw new ApiError("Faculty not found", 404);
+  }
+
+  const facultyExists = await Department.findOne({ headOfDepartment });
+  if (facultyExists) {
+    throw new ApiError("This faculty is already assigned as head of another department", 409);
+  }
+
+  department.headOfDepartment = headOfDepartment;
+  await department.save();
+
+  res.json(
+    new ApiResponse("Head of Department assigned successfully", 200, department)
+  );
+});
+
+const removeHod = asyncHandler(async (req, res) => {
+  const { departmentId } = req.params;
+
+  const department = await Department.findById(departmentId);
+  if (!department) {
+    throw new ApiError("Department not found", 404);
+  }
+
+  department.headOfDepartment = null;
+  await department.save();
+
+  res.json(
+    new ApiResponse("Head of Department removed successfully", 200, department)
   );
 });
 
@@ -166,5 +199,7 @@ export {
   getDepartmentById,
   updateDepartment,
   deleteDepartment,
-  checkDepartmentCodeExists
+  checkDepartmentCodeExists,
+  addHod,
+  removeHod
 };
