@@ -76,7 +76,7 @@ const getFacultiesByInstitution = asyncHandler(async (req, res) => {
     const { institutionId } = req.params;
 
     const faculties = await Faculty.find({ institutionId })
-        .populate("userId", "name email phone")
+        .populate("userId", "name email phone avatar")
         .populate("departmentId", "name")
         .populate("courses.courseId", "name code");
 
@@ -89,7 +89,7 @@ const getFacultiesByDepartment = asyncHandler(async (req, res) => {
     const { departmentId } = req.params;
 
     const faculties = await Faculty.find({ departmentId })
-        .populate("userId", "name email phone")
+        .populate("userId", "name email phone avatar")
         .populate("courses.courseId", "name code");
 
     res.json(
@@ -101,7 +101,7 @@ const getFacultyById = asyncHandler(async (req, res) => {
     const { facultyId } = req.params;
 
     const faculty = await Faculty.findById(facultyId)
-        .populate("userId", "name email phone")
+        .populate("userId", "name email phone avatar")
         .populate("institutionId", "name")
         .populate("departmentId", "name")
         .populate("courses.courseId", "name code")
@@ -130,6 +130,7 @@ const deleteFaculty = asyncHandler(async (req, res) => {
         throw new ApiError("User not found for this faculty", 404);
     }
     await Faculty.findByIdAndDelete(facultyId);
+    //TODO: delete the avatar from the server storage as well
     await User.findByIdAndDelete(user._id);
 
     res.json(
@@ -189,19 +190,24 @@ const finishFacultyCourse = asyncHandler(async (req, res) => {
         throw new ApiError("Invalid courseId", 400);
     }
 
+    const objId = new mongoose.Types.ObjectId(courseId);
+
     const updated = await Faculty.findOneAndUpdate(
-        { _id: facultyId },
+        {
+            _id: facultyId,
+            "courses.courseId": objId 
+        },
         [
             {
                 $set: {
                     prevCourses: {
-                        $concatArrays: [
+                        $setUnion: [
                             "$prevCourses",
                             {
                                 $filter: {
                                     input: "$courses",
                                     as: "c",
-                                    cond: { $eq: ["$$c.courseId", new mongoose.Types.ObjectId(courseId)] }
+                                    cond: { $eq: ["$$c.courseId", objId] }
                                 }
                             }
                         ]
@@ -210,16 +216,18 @@ const finishFacultyCourse = asyncHandler(async (req, res) => {
                         $filter: {
                             input: "$courses",
                             as: "c",
-                            cond: { $ne: ["$$c.courseId", new mongoose.Types.ObjectId(courseId)] }
+                            cond: { $ne: ["$$c.courseId", objId] }
                         }
                     }
                 }
             }
         ],
-        { new: true }
+        { new: true, updatePipeline: true }
     );
 
-    if (!updated) throw new ApiError("Faculty not found or course not present", 404);
+    if (!updated) {
+        throw new ApiError("Faculty not found or course not assigned", 404);
+    }
 
     res.json(new ApiResponse("Course moved to previous courses", 200, updated));
 });

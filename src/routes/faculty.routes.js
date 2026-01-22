@@ -32,8 +32,8 @@ router.put("/update-department/:facultyId", validateInstitutionJWT, updateFacult
 router.put("/update-courses/:facultyId", validateInstitutionJWT, updateFacultyCourses);
 router.put("/update-coursesById/:facultyId", validateUserJWT, updateFacultyCourses);
 router.put("/toggle-in-charge/:facultyId", validateInstitutionJWT, toggleFacultyInCharge);
-router.put("/finish-course/:facultyId/:courseId", validateUserJWT, finishFacultyCourse);
-router.put("/finish-course/:facultyId/:courseId", validateInstitutionJWT, finishFacultyCourse);
+router.put("/finish-course-by-user/:facultyId/:courseId", validateUserJWT, finishFacultyCourse);
+router.put("/finish-course-by-faculty/:facultyId/:courseId", validateInstitutionJWT, finishFacultyCourse);
 router.put("/change-status/:facultyId", validateInstitutionJWT, modifyActiveStatus);
 
 export default router;
