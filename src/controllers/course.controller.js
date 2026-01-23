@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Department from "../models/department.model.js";
 import { Faculty } from "../models/faculty.model.js";
 import mongoose from "mongoose";
-import { Student } from '../models/student.model';
+import { Student } from '../models/student.model.js';
 
 const createCourse = asyncHandler(async (req, res) => {
   const { departmentId, name, code, credits, semester } = req.body;
@@ -136,6 +136,8 @@ const updateCourse = asyncHandler(async (req, res) => {
 const deleteCourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
   // TODO: remove course from faculties' courses and prevCourses arrays as well as from the student courses
+  // TODO: male prevcourse deleteion controller,
+  // TODO: make course deletion 
 
   const course = await Course.findByIdAndDelete(courseId);
 

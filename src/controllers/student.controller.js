@@ -165,6 +165,8 @@ const updateStudentBranch = asyncHandler(async (req, res) => {
     );
 });
 
+// TODO: seperate it into add and remove courses
+// TODO: make deletion of course from prevcourses and courses when course is deleted
 const updateStudentCourses = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { courseIds } = req.body;
