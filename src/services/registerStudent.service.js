@@ -2,7 +2,6 @@ import { Student } from "../models/student.model.js";
 import { User } from "../models/user.model.js";
 import { Institution } from "../models/institution.model.js";
 import { Branch } from "../models/branch.model.js";
-import Course from "../models/course.model.js";
 
 export const registerStudentService = async (payload) => {
   const {
@@ -13,7 +12,6 @@ export const registerStudentService = async (payload) => {
     institutionCode,
     branchCode,
     enrollmentNumber,
-    courseCodes,
     semester,
     admissionYear,
     hostelStatus,
@@ -40,13 +38,13 @@ export const registerStudentService = async (payload) => {
   const branch = await Branch.findOne({ code: branchCode });
   if (!branch) throw new Error("Invalid branch code");
 
-  let courses = [];
-  if (courseCodes) {
-    const codesArray = courseCodes.split(",").map(c => c.trim());
-    // check if all course is active
-    courses = await Course.find({ code: { $in: codesArray }, isActive: true });
-    if (courses.length !== codesArray.length) {
-      throw new Error("Some course codes are invalid");
+  let parsedGuardian = [];
+  if (guardianDetails) {
+    try {
+      const parsed = JSON.parse(guardianDetails);
+      parsedGuardian = Array.isArray(parsed) ? parsed : [parsed];
+    } catch (err) {
+      throw new Error("Invalid guardian details format");
     }
   }
 
@@ -68,11 +66,10 @@ export const registerStudentService = async (payload) => {
       institutionId: institution._id,
       branchId: branch._id,
       enrollmentNumber,
-      courseIds: courses.map(c => c._id),
-      semester,
-      admissionYear,
+      semester: Number(semester),
+      admissionYear: Number(admissionYear),
       hostelStatus: hostelStatus ?? false,
-      guardianDetails: guardianDetails ? JSON.parse(guardianDetails) : {},
+      guardianDetails: parsedGuardian,
     });
     const sanitizedUser = user.toObject();
     delete sanitizedUser.password;
