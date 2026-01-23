@@ -1,10 +1,18 @@
+import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AttendanceRecord } from "../models/attendenceRecord.model.js";
 import { AttendanceSession } from "../models/attendenceSession.model.js";
 import { Student } from "../models/student.model.js";
+import { Branch } from "../models/branch.model.js";
 import assertObjectId from "../utils/assertObjectId.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+
+const computeBatch = async (student) => {
+  const branch = await Branch.findById(student.branchId).select("code");
+  if (!branch) throw new ApiError("Branch not found", 400);
+  return `${branch.code}-${student.admissionYear}`;
+};
 
 const markAttendance = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
@@ -14,15 +22,18 @@ const markAttendance = asyncHandler(async (req, res) => {
 
   const session = await AttendanceSession.findById(sessionId);
   if (!session) throw new ApiError("Session not found", 404);
-  const students = await Student.find({
-    semester: session.semester,
-  }).select("_id");
 
-  const validIds = new Set(students.map(s => s._id.toString()));
+  const allStudents = await Student.find({}).select("_id branchId admissionYear");
+  const validStudents = [];
+
+  for (const s of allStudents) {
+    const batch = await computeBatch(s);
+    if (batch === session.batch) validStudents.push(s._id.toString());
+  }
 
   for (const r of records) {
-    if (!validIds.has(r.studentId)) {
-      throw new ApiError("Student not in batch/semester", 400);
+    if (!validStudents.includes(r.studentId)) {
+      throw new ApiError("Student not in this batch", 400);
     }
   }
 
@@ -71,14 +82,19 @@ const studentCourseAttendance = asyncHandler(async (req, res) => {
 });
 
 const batchDefaulters = asyncHandler(async (req, res) => {
-  const { batch, semester, courseId } = req.query;
+  const { batch, courseId } = req.query;
+  assertObjectId(courseId);
 
-  const students = await Student.find({ semester }).select("_id");
+  const allStudents = await Student.find({}).select("_id branchId admissionYear");
 
-  const studentIds = students.map(s => s._id);
+  const batchStudents = [];
+  for (const s of allStudents) {
+    const b = await computeBatch(s);
+    if (b === batch) batchStudents.push(s._id);
+  }
 
-  const records = await AttendanceRecord.aggregate([
-    { $match: { studentId: { $in: studentIds }, courseId: new mongoose.Types.ObjectId(courseId) } },
+  const stats = await AttendanceRecord.aggregate([
+    { $match: { studentId: { $in: batchStudents }, courseId: new mongoose.Types.ObjectId(courseId) } },
     {
       $group: {
         _id: "$studentId",
@@ -96,11 +112,12 @@ const batchDefaulters = asyncHandler(async (req, res) => {
     { $match: { percentage: { $lt: 75 } } }
   ]);
 
-  res.json(new ApiResponse("Defaulters fetched", 200, records));
+  res.json(new ApiResponse("Batch defaulters", 200, stats));
 });
 
 const studentFullReport = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
+  assertObjectId(studentId);
 
   const report = await AttendanceRecord.aggregate([
     { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
@@ -113,12 +130,81 @@ const studentFullReport = asyncHandler(async (req, res) => {
     }
   ]);
 
-  res.json(new ApiResponse("Student full attendance report", 200, report));
+  res.json(new ApiResponse("Student full report", 200, report));
 });
+
+const batchCourseMatrix = asyncHandler(async (req, res) => {
+  const { batch, courseId } = req.query;
+  assertObjectId(courseId);
+
+  const allStudents = await Student.find({}).select("_id name branchId admissionYear");
+
+  const students = [];
+  for (const s of allStudents) {
+    const b = await computeBatch(s);
+    if (b === batch) students.push(s);
+  }
+
+  const sessions = await AttendanceSession.find({ batch, courseId })
+    .select("_id date startTime endTime")
+    .sort({ date: 1, startTime: 1 });
+
+  const sessionIds = sessions.map(s => s._id);
+
+  const records = await AttendanceRecord.find({ sessionId: { $in: sessionIds } })
+    .select("sessionId studentId status");
+
+  const matrix = sessions.map(session => {
+    const row = {
+      date: session.date,
+      startTime: session.startTime,
+      endTime: session.endTime
+    };
+
+    students.forEach(st => {
+      const rec = records.find(r => r.sessionId.equals(session._id) && r.studentId.equals(st._id));
+      row[st.name] = rec ? rec.status : "-";
+    });
+
+    return row;
+  });
+
+  res.json(new ApiResponse("Batch course matrix", 200, { students, sessions: matrix }));
+});
+
+const studentCourseDatewise = asyncHandler(async (req, res) => {
+  const { studentId, courseId } = req.params;
+  assertObjectId(studentId);
+  assertObjectId(courseId);
+
+  const records = await AttendanceRecord.find({ studentId, courseId })
+    .populate({ path: "sessionId", select: "date startTime endTime" })
+    .sort({ "sessionId.date": 1, "sessionId.startTime": 1 });
+
+  res.json(new ApiResponse("Student course datewise", 200, records));
+});
+
+const sessionSlotAttendance = asyncHandler(async (req, res) => {
+  const { sessionId } = req.params;
+  assertObjectId(sessionId);
+
+  const records = await AttendanceRecord.find({ sessionId })
+    .populate("studentId", "name enrollmentNumber")
+    .sort({ status: 1 });
+
+  const session = await AttendanceSession.findById(sessionId)
+    .populate("courseId facultyId");
+
+  res.json(new ApiResponse("Session log", 200, { session, records }));
+});
+
 
 export {
   markAttendance,
   studentCourseAttendance,
   batchDefaulters,
-  studentFullReport
+  studentFullReport,
+  batchCourseMatrix,
+  studentCourseDatewise,
+  sessionSlotAttendance
 };

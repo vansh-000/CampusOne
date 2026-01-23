@@ -16,15 +16,15 @@ import { validateUserJWT } from "../middlewares/userAuth.middleware.js";
 
 const router = Router();
 
-router.get("/session/faculty/:facultyId", getFacultySessions);
-router.get("/session/student/:studentId", getStudentSessions);
-router.get("/session/batch", getBatchSessions);
-router.get("/session/institution/:institutionId", getInstitutionSessions);
+router.get("/faculty/:facultyId", getFacultySessions);
+router.get("/student/:studentId", getStudentSessions);
+router.get("/batch", getBatchSessions);
+router.get("/institution/:institutionId", getInstitutionSessions);
 
-router.post("/session/generate", validateInstitutionJWT, generateSessions);
-router.patch("/session/:sessionId/cancel", validateUserJWT, cancelSession);
-router.patch("/session/:sessionId/holiday", validateUserJWT, holidaySession);
-router.delete("/session/:sessionId", validateUserJWT, deleteSession);
-router.post("/session/manual/faculty/:facultyId", validateUserJWT, generateFacultySessionsManual);
+router.post("/generate", validateInstitutionJWT, generateSessions);
+router.patch("/:sessionId/cancel", validateUserJWT, cancelSession);
+router.patch("/:sessionId/holiday", validateUserJWT, holidaySession);
+router.delete("/:sessionId", validateUserJWT, deleteSession);
+router.post("/manual/faculty/:facultyId", validateUserJWT, generateFacultySessionsManual);
 
 export default router;
