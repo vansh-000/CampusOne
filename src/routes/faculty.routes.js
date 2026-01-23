@@ -1,7 +1,9 @@
 import { Router } from "express";
 import {
+    addFacultyCourse,
     createFaculty,
     deleteFaculty,
+    deleteFacultyCourse,
     editFaculty,
     finishFacultyCourse,
     getFacultiesByDepartment,
@@ -9,7 +11,6 @@ import {
     getFacultyById,
     modifyActiveStatus,
     toggleFacultyInCharge,
-    updateFacultyCourses,
     updateFacultyDepartment
 } from "../controllers/faculty.controller.js";
 
@@ -29,8 +30,10 @@ router.get("/institution/:institutionId", validateInstitutionJWT, getFacultiesBy
 router.get("/department/:departmentId", validateInstitutionJWT, getFacultiesByDepartment);
 router.delete("/delete-faculty/:facultyId", validateInstitutionJWT, deleteFaculty);
 router.put("/update-department/:facultyId", validateInstitutionJWT, updateFacultyDepartment);
-router.put("/update-courses/:facultyId", validateInstitutionJWT, updateFacultyCourses);
-router.put("/update-coursesById/:facultyId", validateUserJWT, updateFacultyCourses);
+router.put("/add-courses/faculty/:facultyId", validateInstitutionJWT, addFacultyCourse);
+router.put("/add-coursesById/faculty/:facultyId", validateUserJWT, addFacultyCourse);
+router.put("/delete-courses/faculty/:facultyId/course/:courseId", validateInstitutionJWT, deleteFacultyCourse);
+router.put("/delete-coursesById/faculty/:facultyId/course/:courseId", validateUserJWT, deleteFacultyCourse);
 router.put("/toggle-in-charge/:facultyId", validateInstitutionJWT, toggleFacultyInCharge);
 router.put("/finish-course-by-user/:facultyId/:courseId", validateUserJWT, finishFacultyCourse);
 router.put("/finish-course-by-faculty/:facultyId/:courseId", validateInstitutionJWT, finishFacultyCourse);
