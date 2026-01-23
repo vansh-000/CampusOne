@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Department from "../models/department.model.js";
 import mongoose from "mongoose";
 import { User } from '../models/user.model.js';
-import Course from '../models/course.model';
+import Course from '../models/course.model.js';
 
 const assertObjectId = (id, fieldName = "id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
