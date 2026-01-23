@@ -5,14 +5,22 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Department from "../models/department.model.js";
 import { Faculty } from "../models/faculty.model.js";
 import mongoose from "mongoose";
-import { Student } from '../models/student.model.js';
+import { Student } from "../models/student.model.js";
+
+const assertObjectId = (id, field = "id") => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(`Invalid ${field}`, 400);
+  }
+};
 
 const toObjectId = (id) => new mongoose.Types.ObjectId(id);
 
 const assertCourseExists = async (courseId, departmentId) => {
+  assertObjectId(courseId, "courseId");
+  assertObjectId(departmentId, "departmentId");
   const exists = await Course.findOne({
-    _id: toObjectId(courseId),
-    departmentId: toObjectId(departmentId)
+    _id: courseId,
+    departmentId
   });
   if (!exists) throw new ApiError("Course not found", 404);
 };
@@ -23,11 +31,10 @@ const createCourse = asyncHandler(async (req, res) => {
   if (!departmentId || !name || !code || credits === undefined || !semester) {
     throw new ApiError("All fields are required", 400);
   }
+  assertObjectId(departmentId, "departmentId");
 
   const exists = await Course.findOne({ code, departmentId });
-  if (exists) {
-    throw new ApiError("Course with this code already exists", 409);
-  }
+  if (exists) throw new ApiError("Course with this code already exists", 409);
 
   const course = await Course.create({
     departmentId,
@@ -37,23 +44,21 @@ const createCourse = asyncHandler(async (req, res) => {
     semester,
   });
 
-  res.json(
-    new ApiResponse("Course created successfully", 201, course)
-  );
+  res.json(new ApiResponse("Course created successfully", 201, course));
 });
 
 const getCoursesByDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
+  assertObjectId(departmentId, "departmentId");
 
   const courses = await Course.find({ departmentId });
 
-  res.json(
-    new ApiResponse("Courses fetched successfully", 200, courses)
-  );
+  res.json(new ApiResponse("Courses fetched successfully", 200, courses));
 });
 
 const getCourseByInstitution = asyncHandler(async (req, res) => {
   const { institutionId } = req.params;
+  assertObjectId(institutionId, "institutionId");
 
   const courses = await Course.aggregate([
     {
@@ -65,46 +70,37 @@ const getCourseByInstitution = asyncHandler(async (req, res) => {
       }
     },
     { $unwind: "$department" },
-    { $match: { "department.institutionId": new mongoose.Types.ObjectId(institutionId) } }
+    { $match: { "department.institutionId": toObjectId(institutionId) } }
   ]);
 
-  res.json(
-    new ApiResponse("Courses fetched", 200, courses)
-  );
+  res.json(new ApiResponse("Courses fetched", 200, courses));
 });
-
-
 
 const getCourseById = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
+  assertObjectId(courseId, "courseId");
 
-  const course = await Course.findById(courseId).populate(
-    "departmentId",
-    "name code"
-  );
+  const course = await Course.findById(courseId).populate("departmentId", "name code");
 
-  if (!course) {
-    throw new ApiError("Course not found", 404);
-  }
+  if (!course) throw new ApiError("Course not found", 404);
 
-  res.json(
-    new ApiResponse("Course fetched successfully", 200, course)
-  );
+  res.json(new ApiResponse("Course fetched successfully", 200, course));
 });
 
 const updateCourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
   const { code, departmentId, name, credits, semester } = req.body;
+  assertObjectId(courseId, "courseId");
 
   const course = await Course.findById(courseId);
-  if (!course) {
-    throw new ApiError("Course not found", 404);
-  }
+  if (!course) throw new ApiError("Course not found", 404);
 
-  if (departmentId && departmentId.toString() !== course.departmentId.toString()) {
-    const departmentExists = await Department.findById(departmentId);
-    if (!departmentExists) {
-      throw new ApiError("Invalid department", 400);
+  if (departmentId) {
+    assertObjectId(departmentId, "departmentId");
+
+    if (departmentId.toString() !== course.departmentId.toString()) {
+      const dept = await Department.findById(departmentId);
+      if (!dept) throw new ApiError("Invalid department", 400);
     }
   }
 
@@ -118,16 +114,12 @@ const updateCourse = asyncHandler(async (req, res) => {
       departmentId: newDept
     });
 
-    if (exists) {
-      throw new ApiError(
-        "A course with this code already exists in this department",
-        409
-      );
-    }
+    if (exists)
+      throw new ApiError("Course code already exists in department", 409);
   }
 
   if (credits !== undefined && credits < 0) {
-    throw new ApiError("Credits must be a non-negative number", 400);
+    throw new ApiError("Credits must be non-negative", 400);
   }
 
   course.name = name ?? course.name;
@@ -138,13 +130,13 @@ const updateCourse = asyncHandler(async (req, res) => {
 
   await course.save();
 
-  res.json(
-    new ApiResponse("Course updated successfully", 200, course)
-  );
+  res.json(new ApiResponse("Course updated successfully", 200, course));
 });
 
 const deleteCourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
+
+  assertObjectId(courseId, "courseId");
   // TODO: remove course from faculties' courses and prevCourses arrays as well as from the student courses
   // TODO: male prevcourse deleteion controller,
   // TODO: make course deletion 
@@ -163,6 +155,8 @@ const deleteCourse = asyncHandler(async (req, res) => {
 const modifyStatus = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
   const { isOpen } = req.body;
+
+  assertObjectId(courseId, "courseId");
 
   if (isOpen === undefined) {
     throw new ApiError("isOpen field is required", 400);

@@ -5,6 +5,12 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
 
+const assertObjectId = (id, fieldName = "id") => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new ApiError(`Invalid ${fieldName} Type`, 400);
+    }
+};
+
 const createBranch = asyncHandler(async (req, res) => {
     const { name, code, departmentId } = req.body;
     const { institutionId } = req.params;
@@ -13,15 +19,16 @@ const createBranch = asyncHandler(async (req, res) => {
         throw new ApiError("Missing required fields", 400);
     }
 
-    if (!mongoose.Types.ObjectId.isValid(institutionId) || !mongoose.Types.ObjectId.isValid(departmentId)) {
-        throw new ApiError("Invalid institution or department id", 400);
-    }
+    assertObjectId(institutionId, "institutionId");
+    assertObjectId(departmentId, "departmentId");
 
     const dept = await Department.findOne({ _id: departmentId, institutionId });
     if (!dept) throw new ApiError("Department does not belong to institution", 400);
 
-    const existingBranch = await Branch.findOne({ code, departmentId, institutionId });
-    if (existingBranch) throw new ApiError("Branch with same code already exists in this department", 409);
+    const existingBranch = await Branch.findOne({ code, institutionId, departmentId });
+    if (existingBranch) {
+        throw new ApiError("Branch with same code already exists in this department", 409);
+    }
 
     const branch = await Branch.create({
         name,
@@ -38,9 +45,7 @@ const createBranch = asyncHandler(async (req, res) => {
 const getBranchesByInstitution = asyncHandler(async (req, res) => {
     const { institutionId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(institutionId)) {
-        throw new ApiError("Invalid institution id", 400);
-    }
+    assertObjectId(institutionId, "institutionId");
 
     const branches = await Branch.find({ institutionId });
 
@@ -51,12 +56,9 @@ const getBranchesByInstitution = asyncHandler(async (req, res) => {
 const getBranchById = asyncHandler(async (req, res) => {
     const { branchId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(branchId)) {
-        throw new ApiError("Invalid branch id", 400);
-    }
+    assertObjectId(branchId, "branchId");
 
     const branch = await Branch.findById(branchId);
-
     if (!branch) throw new ApiError("Branch not found", 404);
 
     res.json(new ApiResponse("Branch fetched successfully", 200, branch));
@@ -66,9 +68,7 @@ const getBranchById = asyncHandler(async (req, res) => {
 const getBranchByDepartment = asyncHandler(async (req, res) => {
     const { departmentId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
-        throw new ApiError("Invalid department id", 400);
-    }
+    assertObjectId(departmentId, "departmentId");
 
     const branches = await Branch.find({ departmentId });
 
@@ -80,9 +80,7 @@ const updateBranch = asyncHandler(async (req, res) => {
     const { branchId } = req.params;
     const { name, code, departmentId } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(branchId)) {
-        throw new ApiError("Invalid branch id", 400);
-    }
+    assertObjectId(branchId, "branchId");
 
     const branch = await Branch.findById(branchId);
     if (!branch) throw new ApiError("Branch not found", 404);
@@ -94,12 +92,20 @@ const updateBranch = asyncHandler(async (req, res) => {
             departmentId: departmentId || branch.departmentId,
             _id: { $ne: branchId }
         });
-        if (duplicate) throw new ApiError("Branch code already exists for this department", 409);
+        if (duplicate) {
+            throw new ApiError("Branch code already exists for this department", 409);
+        }
     }
 
     if (departmentId) {
-        const dept = await Department.findOne({ _id: departmentId, institutionId: branch.institutionId });
-        if (!dept) throw new ApiError("Department does not belong to this institution", 400);
+        assertObjectId(departmentId, "departmentId");
+        const dept = await Department.findOne({
+            _id: departmentId,
+            institutionId: branch.institutionId
+        });
+        if (!dept) {
+            throw new ApiError("Department does not belong to this institution", 400);
+        }
     }
 
     branch.name = name || branch.name;
@@ -115,9 +121,7 @@ const updateBranch = asyncHandler(async (req, res) => {
 const deleteBranch = asyncHandler(async (req, res) => {
     const { branchId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(branchId)) {
-        throw new ApiError("Invalid branch id", 400);
-    }
+    assertObjectId(branchId, "branchId");
 
     const branch = await Branch.findById(branchId);
     if (!branch) throw new ApiError("Branch not found", 404);
@@ -127,7 +131,6 @@ const deleteBranch = asyncHandler(async (req, res) => {
         throw new ApiError("Cannot delete branch with enrolled students", 400);
     }
     await branch.deleteOne();
-
     res.json(new ApiResponse("Branch deleted successfully", 200));
 });
 
@@ -140,9 +143,7 @@ const changeBranchStatus = asyncHandler(async (req, res) => {
         throw new ApiError("isOpen must be boolean", 400);
     }
 
-    if (!mongoose.Types.ObjectId.isValid(branchId)) {
-        throw new ApiError("Invalid branch id", 400);
-    }
+    assertObjectId(branchId, "branchId");
 
     const branch = await Branch.findById(branchId);
     if (!branch) throw new ApiError("Branch not found", 404);

@@ -6,296 +6,315 @@ import Department from "../models/department.model.js";
 import mongoose from "mongoose";
 import { User } from '../models/user.model.js';
 
+const assertObjectId = (id, fieldName = "id") => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(`Invalid ${fieldName}`, 400);
+  }
+};
+
+const toObjectId = (id) => new mongoose.Types.ObjectId(id);
+
 const createFaculty = asyncHandler(async (req, res) => {
-    const {
-        userId,
-        institutionId,
-        departmentId,
-        designation,
-        courses,
-        dateOfJoining,
-    } = req.body;
+  const {
+    userId,
+    institutionId,
+    departmentId,
+    designation,
+    courses,
+    dateOfJoining,
+  } = req.body;
 
-    if (!userId || !institutionId || !departmentId || !designation || !dateOfJoining) {
-        throw new ApiError("All required fields must be provided", 400);
+  if (!userId || !institutionId || !departmentId || !designation || !dateOfJoining) {
+    throw new ApiError("All required fields must be provided", 400);
+  }
+  assertObjectId(userId, "userId");
+  assertObjectId(institutionId, "institutionId");
+  assertObjectId(departmentId, "departmentId");
+
+  const exists = await Faculty.findOne({ userId });
+  if (exists) throw new ApiError("Faculty already exists for this user", 409);
+
+  const dept = await Department.findOne({ _id: departmentId, institutionId });
+  if (!dept) throw new ApiError("Department does not belong to institution", 400);
+
+  if (courses && Array.isArray(courses)) {
+    for (const c of courses) {
+      if (!c.courseId || !c.semester || !c.batch) {
+        throw new ApiError("Each course must include courseId, semester & batch", 400);
+      }
+      assertObjectId(c.courseId, "courseId");
     }
+  }
 
-    const exists = await Faculty.findOne({ userId });
-    if (exists) throw new ApiError("Faculty already exists for this user", 409);
+  const faculty = await Faculty.create({
+    userId,
+    institutionId,
+    departmentId,
+    designation,
+    courses: courses || [],
+    dateOfJoining,
+  });
 
-    const dept = await Department.findOne({ _id: departmentId, institutionId });
-    if (!dept) throw new ApiError("Department does not belong to institution", 400);
-
-    if (courses && Array.isArray(courses)) {
-        for (const c of courses) {
-            if (!c.courseId || !c.semester || !c.batch) {
-                throw new ApiError("Each course must include courseId, semester & batch", 400);
-            }
-        }
-    }
-
-    const faculty = await Faculty.create({
-        userId,
-        institutionId,
-        departmentId,
-        designation,
-        courses: courses || [],
-        dateOfJoining,
-    });
-
-    res.json(
-        new ApiResponse("Faculty created successfully", 201, faculty)
-    );
+  res.json(
+    new ApiResponse("Faculty created successfully", 201, faculty)
+  );
 });
 
 
 const editFaculty = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
+  const { facultyId } = req.params;
 
-    const faculty = await Faculty.findByIdAndUpdate(
-        facultyId,
-        {
-            $set: {
-                designation: req.body.designation,
-                dateOfJoining: req.body.dateOfJoining
-            }
-        },
-        { new: true, runValidators: true }
-    );
+  assertObjectId(facultyId, "facultyId");
 
-    if (!faculty) {
-        throw new ApiError("Faculty not found", 404);
-    }
+  const faculty = await Faculty.findByIdAndUpdate(
+    facultyId,
+    {
+      $set: {
+        designation: req.body.designation,
+        dateOfJoining: req.body.dateOfJoining
+      }
+    },
+    { new: true, runValidators: true }
+  );
 
-    res.json(
-        new ApiResponse("Faculty updated successfully", 200, faculty)
-    );
+  if (!faculty) {
+    throw new ApiError("Faculty not found", 404);
+  }
+
+  res.json(
+    new ApiResponse("Faculty updated successfully", 200, faculty)
+  );
 });
 
 const getFacultiesByInstitution = asyncHandler(async (req, res) => {
-    const { institutionId } = req.params;
+  const { institutionId } = req.params;
 
-    const faculties = await Faculty.find({ institutionId })
-        .populate("userId", "name email phone avatar")
-        .populate("departmentId", "name")
-        .populate("courses.courseId", "name code");
+  assertObjectId(institutionId, "institutionId");
 
-    res.json(
-        new ApiResponse("Faculties fetched successfully", 200, faculties)
-    );
+  const faculties = await Faculty.find({ institutionId })
+    .populate("userId", "name email phone avatar")
+    .populate("departmentId", "name")
+    .populate("courses.courseId", "name code");
+
+  res.json(
+    new ApiResponse("Faculties fetched successfully", 200, faculties)
+  );
 });
 
 const getFacultiesByDepartment = asyncHandler(async (req, res) => {
-    const { departmentId } = req.params;
+  const { departmentId } = req.params;
 
-    const faculties = await Faculty.find({ departmentId })
-        .populate("userId", "name email phone avatar")
-        .populate("courses.courseId", "name code");
+  assertObjectId(departmentId, "departmentId");
 
-    res.json(
-        new ApiResponse("Faculties fetched successfully", 200, faculties)
-    );
+  const faculties = await Faculty.find({ departmentId })
+    .populate("userId", "name email phone avatar")
+    .populate("courses.courseId", "name code");
+
+  res.json(
+    new ApiResponse("Faculties fetched successfully", 200, faculties)
+  );
 });
 
 const getFacultyById = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
+  const { facultyId } = req.params;
 
-    const faculty = await Faculty.findById(facultyId)
-        .populate("userId", "name email phone avatar")
-        .populate("institutionId", "name")
-        .populate("departmentId", "name")
-        .populate("courses.courseId", "name code")
-        .populate("prevCourses.courseId", "name code");
+  assertObjectId(facultyId, "facultyId");
 
-    if (!faculty) {
-        throw new ApiError("Faculty not found", 404);
-    }
+  const faculty = await Faculty.findById(facultyId)
+    .populate("userId", "name email phone avatar")
+    .populate("institutionId", "name")
+    .populate("departmentId", "name")
+    .populate("courses.courseId", "name code")
+    .populate("prevCourses.courseId", "name code");
 
-    res.json(
-        new ApiResponse("Faculty fetched successfully", 200, faculty)
-    );
+  if (!faculty) {
+    throw new ApiError("Faculty not found", 404);
+  }
+
+  res.json(
+    new ApiResponse("Faculty fetched successfully", 200, faculty)
+  );
 });
 
 const deleteFaculty = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
+  const { facultyId } = req.params;
 
-    const facultyExists = await Faculty.findById(facultyId);
+  assertObjectId(facultyId, "facultyId");
 
-    if (!facultyExists) {
-        throw new ApiError("Faculty not found", 404);
-    }
-    // find user for faculty and delete the user as well
-    const user = await User.findById(facultyExists.userId);
-    if (!user) {
-        throw new ApiError("User not found for this faculty", 404);
-    }
-    await Faculty.findByIdAndDelete(facultyId);
-    //TODO: delete the avatar from the server storage as well
-    await User.findByIdAndDelete(user._id);
+  const facultyExists = await Faculty.findById(facultyId);
+  if (!facultyExists) {
+    throw new ApiError("Faculty not found", 404);
+  }
+  const user = await User.findById(facultyExists.userId);
+  if (!user) {
+    throw new ApiError("User not found for this faculty", 404);
+  }
+  //TODO: delete the avatar from the server storage as well
+  await User.findByIdAndDelete(user._id);
+  await Faculty.findByIdAndDelete(facultyId);
 
-    res.json(
-        new ApiResponse("Faculty deleted successfully", 200)
-    );
+  res.json(
+    new ApiResponse("Faculty deleted successfully", 200)
+  );
 });
 
 const updateFacultyDepartment = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
-    const { departmentId } = req.body;
+  const { facultyId } = req.params;
+  const { departmentId } = req.body;
 
-    if (!departmentId) {
-        throw new ApiError("Department ID is required", 400);
-    }
+  assertObjectId(facultyId, "facultyId");
+  assertObjectId(departmentId, "departmentId");
 
-    const faculty = await Faculty.findById(facultyId);
-    if (!faculty) throw new ApiError("Faculty not found", 404);
+  const faculty = await Faculty.findById(facultyId);
+  if (!faculty) throw new ApiError("Faculty not found", 404);
 
-    const dept = await Department.findOne({ _id: departmentId, institutionId: faculty.institutionId });
-    if (!dept) throw new ApiError("Department does not belong to this institution", 400);
+  const dept = await Department.findOne({ _id: departmentId, institutionId: faculty.institutionId });
+  if (!dept) throw new ApiError("Department does not belong to this institution", 400);
 
-    faculty.departmentId = departmentId;
-    await faculty.save();
+  faculty.departmentId = departmentId;
+  await faculty.save();
 
-    res.json(
-        new ApiResponse("Department updated successfully", 200, faculty)
-    );
+  res.json(
+    new ApiResponse("Department updated successfully", 200, faculty)
+  );
 });
 
 const updateFacultyCourses = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
-    const { courses } = req.body;
+  const { facultyId } = req.params;
+  const { courses } = req.body;
 
-    if (!Array.isArray(courses)) throw new ApiError("Courses must be an array", 400);
+  assertObjectId(facultyId, "facultyId");
 
-    for (const c of courses) {
-        if (!c.courseId || !c.semester || !c.batch) {
-            throw new ApiError("Each course must include courseId, semester & batch", 400);
-        }
+  if (!Array.isArray(courses)) throw new ApiError("Courses must be an array", 400);
+
+  for (const c of courses) {
+    if (!c.courseId || !c.semester || !c.batch) {
+      throw new ApiError("Each course must include courseId, semester & batch", 400);
     }
+    assertObjectId(c.courseId, "courseId");
+  }
 
-    const faculty = await Faculty.findByIdAndUpdate(
-        facultyId,
-        { courses },
-        { new: true }
-    );
+  const faculty = await Faculty.findByIdAndUpdate(
+    facultyId,
+    { courses },
+    { new: true }
+  );
 
-    if (!faculty) throw new ApiError("Faculty not found", 404);
+  if (!faculty) throw new ApiError("Faculty not found", 404);
 
-    res.json(new ApiResponse("Courses updated successfully", 200, faculty));
+  res.json(new ApiResponse("Courses updated successfully", 200, faculty));
 });
 
 const finishFacultyCourse = asyncHandler(async (req, res) => {
-    const { facultyId, courseId } = req.params;
+  const { facultyId, courseId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-        throw new ApiError("Invalid courseId", 400);
-    }
+  assertObjectId(facultyId, "facultyId");
+  assertObjectId(courseId, "courseId");
 
-    const objId = new mongoose.Types.ObjectId(courseId);
+  const objId = toObjectId(courseId);
 
-    const updated = await Faculty.findOneAndUpdate(
-        {
-            _id: facultyId,
-            "courses.courseId": objId 
-        },
-        [
-            {
-                $set: {
-                    prevCourses: {
-                        $setUnion: [
-                            "$prevCourses",
-                            {
-                                $filter: {
-                                    input: "$courses",
-                                    as: "c",
-                                    cond: { $eq: ["$$c.courseId", objId] }
-                                }
-                            }
-                        ]
-                    },
-                    courses: {
-                        $filter: {
-                            input: "$courses",
-                            as: "c",
-                            cond: { $ne: ["$$c.courseId", objId] }
-                        }
-                    }
+  const updated = await Faculty.findOneAndUpdate(
+    {
+      _id: facultyId,
+      "courses.courseId": objId
+    },
+    [
+      {
+        $set: {
+          prevCourses: {
+            $setUnion: [
+              "$prevCourses",
+              {
+                $filter: {
+                  input: "$courses",
+                  as: "c",
+                  cond: { $eq: ["$$c.courseId", objId] }
                 }
+              }
+            ]
+          },
+          courses: {
+            $filter: {
+              input: "$courses",
+              as: "c",
+              cond: { $ne: ["$$c.courseId", objId] }
             }
-        ],
-        { new: true, updatePipeline: true }
-    );
+          }
+        }
+      }
+    ],
+    { new: true, updatePipeline: true }
+  );
 
-    if (!updated) {
-        throw new ApiError("Faculty not found or course not assigned", 404);
-    }
+  if (!updated) throw new ApiError("Faculty not found or course not assigned", 404);
 
-    res.json(new ApiResponse("Course moved to previous courses", 200, updated));
+  res.json(new ApiResponse("Course moved to previous courses", 200, updated));
 });
 
 const modifyActiveStatus = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
-    const { isActive } = req.body;
+  const { facultyId } = req.params;
+  const { isActive } = req.body;
 
-    if (typeof isActive !== "boolean") {
-        throw new ApiError("isActive must be boolean", 400);
-    }
+  if (typeof isActive !== "boolean") {
+    throw new ApiError("isActive must be boolean", 400);
+  }
 
-    const faculty = await Faculty.findByIdAndUpdate(
-        facultyId,
-        { isActive },
-        { new: true }
-    );
+  const faculty = await Faculty.findByIdAndUpdate(
+    facultyId,
+    { isActive },
+    { new: true }
+  );
 
-    if (!faculty) {
-        throw new ApiError("Faculty not found", 404);
-    }
+  if (!faculty) {
+    throw new ApiError("Faculty not found", 404);
+  }
 
-    res.json(
-        new ApiResponse(
-            `Faculty has been ${isActive ? "activated" : "deactivated"}`,
-            200,
-            faculty
-        )
-    );
+  res.json(
+    new ApiResponse(
+      `Faculty has been ${isActive ? "activated" : "deactivated"}`,
+      200,
+      faculty
+    )
+  );
 });
 
 const toggleFacultyInCharge = asyncHandler(async (req, res) => {
-    const { facultyId } = req.params;
-    const { isInCharge } = req.body;
+  const { facultyId } = req.params;
+  const { isInCharge } = req.body;
 
-    if (typeof isInCharge !== "boolean") {
-        throw new ApiError("isInCharge must be boolean", 400);
-    }
+  if (typeof isInCharge !== "boolean") {
+    throw new ApiError("isInCharge must be boolean", 400);
+  }
 
-    const faculty = await Faculty.findByIdAndUpdate(
-        facultyId,
-        { isInCharge },
-        { new: true }
-    );
+  const faculty = await Faculty.findByIdAndUpdate(
+    facultyId,
+    { isInCharge },
+    { new: true }
+  );
 
-    if (!faculty) {
-        throw new ApiError("Faculty not found", 404);
-    }
+  if (!faculty) {
+    throw new ApiError("Faculty not found", 404);
+  }
 
-    res.json(
-        new ApiResponse(
-            `Faculty ${isInCharge ? "marked" : "unmarked"} as in-charge`,
-            200,
-            faculty
-        )
-    );
+  res.json(
+    new ApiResponse(
+      `Faculty ${isInCharge ? "marked" : "unmarked"} as in-charge`,
+      200,
+      faculty
+    )
+  );
 });
 
 export {
-    createFaculty,
-    editFaculty,
-    getFacultiesByInstitution,
-    getFacultiesByDepartment,
-    getFacultyById,
-    deleteFaculty,
-    updateFacultyDepartment,
-    updateFacultyCourses,
-    finishFacultyCourse,
-    modifyActiveStatus,
-    toggleFacultyInCharge,
+  createFaculty,
+  editFaculty,
+  getFacultiesByInstitution,
+  getFacultiesByDepartment,
+  getFacultyById,
+  deleteFaculty,
+  updateFacultyDepartment,
+  updateFacultyCourses,
+  finishFacultyCourse,
+  modifyActiveStatus,
+  toggleFacultyInCharge,
 };

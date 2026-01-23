@@ -5,6 +5,13 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Faculty } from '../models/faculty.model.js';
 import Course from '../models/course.model.js';
 import { Branch } from "../models/branch.model.js";
+import mongoose from "mongoose";
+
+const assertObjectId = (id, fieldName = "id") => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(`Invalid ${fieldName}`, 400);
+  }
+};
 
 const createDepartment = asyncHandler(async (req, res) => {
   const { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
@@ -12,8 +19,10 @@ const createDepartment = asyncHandler(async (req, res) => {
   if (!institutionId || !name || !code || !contactEmail) {
     throw new ApiError("All fields are required", 400);
   }
+  assertObjectId(institutionId, "institutionId");
 
   if (headOfDepartment) {
+    assertObjectId(headOfDepartment, "headOfDepartment");
     const faculty = await Faculty.findById(headOfDepartment);
     if (!faculty) {
       throw new ApiError("Faculty not found", 404);
@@ -35,6 +44,7 @@ const createDepartment = asyncHandler(async (req, res) => {
     name,
     code,
     contactEmail,
+    headOfDepartment: headOfDepartment
   });
 
   res.json(
@@ -45,34 +55,29 @@ const createDepartment = asyncHandler(async (req, res) => {
 const getDepartmentsByInstitution = asyncHandler(async (req, res) => {
   const { institutionId } = req.params;
 
-  const departments = await Department.find({
-    institutionId: institutionId,
-  }).populate("headOfDepartment", "designation userId");
+  assertObjectId(institutionId, "institutionId");
+  const departments = await Department.find({ institutionId })
+    .populate("headOfDepartment", "designation userId");
 
-  res.json(
-    new ApiResponse("Departments fetched successfully", 200, departments)
-  );
+  res.json(new ApiResponse("Departments fetched successfully", 200, departments));
 });
 
 const getDepartmentById = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
 
-  const department = await Department.findById(departmentId).populate(
-    "headOfDepartment"
-  );
+  assertObjectId(departmentId, "departmentId");
+  const department = await Department.findById(departmentId)
+    .populate("headOfDepartment");
 
-  if (!department) {
-    throw new ApiError("Department not found", 404);
-  }
+  if (!department) throw new ApiError("Department not found", 404);
 
-  res.json(
-    new ApiResponse("Department fetched successfully", 200, department)
-  );
+  res.json(new ApiResponse("Department fetched successfully", 200, department));
 });
 
 const updateDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
   const { name, code, contactEmail } = req.body;
+  assertObjectId(departmentId, "departmentId");
 
   const department = await Department.findById(departmentId);
   if (!department) {
@@ -82,7 +87,7 @@ const updateDepartment = asyncHandler(async (req, res) => {
     const exists = await Department.findOne({
       code,
       institutionId: department.institutionId,
-      _id: { $ne: departmentId },
+      _id: { $ne: departmentId }
     });
 
     if (exists) {
@@ -110,6 +115,9 @@ const addHod = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
   const { headOfDepartment } = req.body;
 
+  assertObjectId(departmentId, "departmentId");
+  assertObjectId(headOfDepartment, "headOfDepartment");
+
   const department = await Department.findById(departmentId);
   if (!department) {
     throw new ApiError("Department not found", 404);
@@ -135,6 +143,7 @@ const addHod = asyncHandler(async (req, res) => {
 
 const removeHod = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
+  assertObjectId(departmentId, "departmentId");
 
   const department = await Department.findById(departmentId);
   if (!department) {
@@ -156,19 +165,20 @@ const checkDepartmentCodeExists = asyncHandler(async (req, res) => {
   }
 
   const exists = await Department.findOne({ code, institutionId });
-  if (exists) {
-    return res.json(
-      new ApiResponse("Department code already exists", 200, { exists: true })
-    );
-  } else {
-    return res.json(
-      new ApiResponse("Department code is available", 200, { exists: false })
-    );
-  }
+
+  return res.json(
+    new ApiResponse(
+      exists ? "Department code already exists" : "Department code available",
+      200,
+      { exists: !!exists }
+    )
+  );
 });
 
 const deleteDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
+
+  assertObjectId(departmentId, "departmentId");
 
   const department = await Department.findById(departmentId);
   if (!department) {
@@ -186,11 +196,9 @@ const deleteDepartment = asyncHandler(async (req, res) => {
   if (branchAssigned) {
     throw new ApiError("Cannot delete department assigned to branches", 400);
   }
-  await department.remove();
+    await department.deleteOne();
 
-  res.json(
-    new ApiResponse("Department deleted successfully", 200)
-  );
+  res.json(new ApiResponse("Department deleted successfully", 200));
 });
 
 export {

@@ -1,8 +1,15 @@
+import mongoose from "mongoose";
 import { Student } from "../models/student.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+
+const assertObjectId = (id, field = "id") => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new ApiError(`Invalid ${field}`, 400);
+    }
+};
 
 const createStudent = asyncHandler(async (req, res) => {
     const {
@@ -26,6 +33,14 @@ const createStudent = asyncHandler(async (req, res) => {
         !admissionYear
     ) {
         throw new ApiError("All required fields must be provided", 400);
+    }
+
+    assertObjectId(userId, "userId");
+    assertObjectId(institutionId, "institutionId");
+    assertObjectId(branchId, "branchId");
+
+    if (Array.isArray(courseIds)) {
+        courseIds.forEach(id => assertObjectId(id, "courseId"));
     }
 
     const exists = await Student.findOne({
@@ -58,6 +73,9 @@ const createStudent = asyncHandler(async (req, res) => {
 
 const editStudent = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
+
+    assertObjectId(studentId, "studentId");
+
     delete req.body.userId;
     delete req.body.institutionId;
     if (req.body.enrollmentNumber) {
@@ -82,6 +100,8 @@ const editStudent = asyncHandler(async (req, res) => {
 const getStudentsByInstitution = asyncHandler(async (req, res) => {
     const { institutionId } = req.params;
 
+    assertObjectId(institutionId, "institutionId");
+
     const students = await Student.find({ institutionId })
         .populate("userId", "name email phone")
         .populate("branchId", "name")
@@ -95,6 +115,8 @@ const getStudentsByInstitution = asyncHandler(async (req, res) => {
 const getStudentsByBranch = asyncHandler(async (req, res) => {
     const { branchId } = req.params;
 
+    assertObjectId(branchId, "branchId");
+
     const students = await Student.find({ branchId, isActive: true })
         .populate("userId", "name email")
         .populate("courseIds", "name code");
@@ -106,6 +128,8 @@ const getStudentsByBranch = asyncHandler(async (req, res) => {
 
 const getStudentById = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
+
+    assertObjectId(studentId, "studentId");
 
     const student = await Student.findById(studentId)
         .populate("userId", "name email phone")
@@ -125,12 +149,13 @@ const getStudentById = asyncHandler(async (req, res) => {
 const deleteStudent = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
 
+    assertObjectId(studentId, "studentId");
+
     const student = await Student.findById(studentId);
     if (!student) {
         throw new ApiError("Student not found", 404);
     }
 
-    // delete associated user
     const user = await User.findById(student.userId);
     if (!user) {
         throw new ApiError("User not found for this student", 404);
@@ -146,9 +171,8 @@ const updateStudentBranch = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { branchId } = req.body;
 
-    if (!branchId) {
-        throw new ApiError("Branch ID is required", 400);
-    }
+    assertObjectId(studentId, "studentId");
+    assertObjectId(branchId, "branchId");
 
     const student = await Student.findByIdAndUpdate(
         studentId,
@@ -171,9 +195,13 @@ const updateStudentCourses = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { courseIds } = req.body;
 
+    assertObjectId(studentId, "studentId");
+
     if (!Array.isArray(courseIds)) {
         throw new ApiError("courseIds must be an array", 400);
     }
+
+    courseIds.forEach(id => assertObjectId(id, "courseId"));
 
     const student = await Student.findByIdAndUpdate(
         studentId,
@@ -192,6 +220,8 @@ const updateStudentCourses = asyncHandler(async (req, res) => {
 
 const updateStudentSemester = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
+
+    assertObjectId(studentId, "studentId");
 
     const updated = await Student.findOneAndUpdate(
         { _id: studentId },
@@ -236,6 +266,8 @@ const updateHostelStatus = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { hostelStatus } = req.body;
 
+    assertObjectId(studentId, "studentId");
+
     if (typeof hostelStatus !== "boolean") {
         throw new ApiError("hostelStatus must be boolean", 400);
     }
@@ -262,6 +294,8 @@ const updateHostelStatus = asyncHandler(async (req, res) => {
 const modifyActiveStatus = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { isActive } = req.body;
+
+    assertObjectId(studentId, "studentId");
 
     if (typeof isActive !== "boolean") {
         throw new ApiError("isActive must be boolean", 400);
