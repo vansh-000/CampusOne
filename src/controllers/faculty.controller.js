@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import Department from "../models/department.model.js";
 import mongoose from "mongoose";
 import { User } from '../models/user.model.js';
+import Course from '../models/course.model.js';
 
 const assertObjectId = (id, fieldName = "id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -179,31 +180,130 @@ const updateFacultyDepartment = asyncHandler(async (req, res) => {
   );
 });
 
-const updateFacultyCourses = asyncHandler(async (req, res) => {
+const addFacultyCourse = asyncHandler(async (req, res) => {
   const { facultyId } = req.params;
-  const { courses } = req.body;
+  const { course } = req.body;
 
   assertObjectId(facultyId, "facultyId");
 
-  if (!Array.isArray(courses)) throw new ApiError("Courses must be an array", 400);
-
-  for (const c of courses) {
-    if (!c.courseId || !c.semester || !c.batch) {
-      throw new ApiError("Each course must include courseId, semester & batch", 400);
-    }
-    assertObjectId(c.courseId, "courseId");
+  if (!course || !course.courseId || !course.semester || !course.batch) {
+    throw new ApiError("Course must include courseId, semester & batch", 400);
   }
+  assertObjectId(course.courseId, "courseId");
 
-  const faculty = await Faculty.findByIdAndUpdate(
-    facultyId,
-    { courses },
-    { new: true }
-  );
-
+  const faculty = await Faculty.findById(facultyId);
   if (!faculty) throw new ApiError("Faculty not found", 404);
 
-  res.json(new ApiResponse("Courses updated successfully", 200, faculty));
+  const courseDoc = await Course.findById(course.courseId);
+  if (!courseDoc) throw new ApiError("Course not found", 404);
+
+  const exists = faculty.courses.some(
+    (c) =>
+      c.courseId.toString() === course.courseId &&
+      c.semester === course.semester &&
+      c.batch === course.batch
+  );
+
+  if (exists) {
+    throw new ApiError("Course already assigned to this faculty", 400);
+  }
+  await Faculty.updateOne(
+    { _id: facultyId },
+    { $push: { courses: course } }
+  );
+
+  const updatedFaculty = await Faculty.findById(facultyId);
+
+  res.json(new ApiResponse("Course added successfully", 200, updatedFaculty));
 });
+
+const deleteFacultyCourse = asyncHandler(async (req, res) => {
+  const { facultyId, courseId } = req.params;
+  const { semester, batch } = req.body;
+
+  assertObjectId(facultyId, "facultyId");
+  assertObjectId(courseId, "courseId");
+
+  if (!semester || !batch) {
+    throw new ApiError("semester & batch are required", 400);
+  }
+
+  const faculty = await Faculty.findById(facultyId);
+  if (!faculty) throw new ApiError("Faculty not found", 404);
+
+  const exists = faculty.courses.some(
+    (c) =>
+      c.courseId.toString() === courseId &&
+      c.semester.toString() === semester.toString() &&
+      c.batch === batch
+  );
+
+  if (!exists) {
+    throw new ApiError(
+      "Course not found in faculty's assigned courses for given semester & batch",
+      404
+    );
+  }
+
+  await Faculty.updateOne(
+    { _id: facultyId },
+    {
+      $pull: {
+        courses: {
+          courseId,
+          semester: Number(semester),
+          batch
+        }
+      }
+    }
+  );
+
+  const updatedFaculty = await Faculty.findById(facultyId);
+
+  res.json(new ApiResponse("Course removed successfully", 200, updatedFaculty));
+});
+
+const deleteFacultyPrevCourse = asyncHandler(async (req, res) => {
+  const { facultyId, courseId } = req.params;
+  const { semester, batch } = req.body;
+  assertObjectId(facultyId, "facultyId");
+  assertObjectId(courseId, "courseId");
+
+  if (!semester || !batch) {
+    throw new ApiError("semester & batch are required", 400);
+  }
+
+  const faculty = await Faculty.findById(facultyId);
+  if (!faculty) throw new ApiError("Faculty not found", 404);
+
+  const exists = faculty.prevCourses.some(
+    (c) =>
+      c.courseId.toString() === courseId &&
+      c.semester.toString() === semester.toString() &&
+      c.batch === batch
+  );
+
+  if (!exists) {
+    throw new ApiError("Course not found in faculty's previous courses for given semester & batch", 404);
+  }
+
+  await Faculty.updateOne(
+    { _id: facultyId },
+    {
+      $pull: {
+        prevCourses: {
+          courseId,
+          semester: Number(semester),
+          batch
+        }
+      }
+    }
+  );
+
+  const updatedFaculty = await Faculty.findById(facultyId);
+
+  res.json(new ApiResponse("Previous course removed successfully", 200, updatedFaculty));
+})
 
 const finishFacultyCourse = asyncHandler(async (req, res) => {
   const { facultyId, courseId } = req.params;
@@ -313,7 +413,9 @@ export {
   getFacultyById,
   deleteFaculty,
   updateFacultyDepartment,
-  updateFacultyCourses,
+  addFacultyCourse,
+  deleteFacultyCourse,
+  deleteFacultyPrevCourse,
   finishFacultyCourse,
   modifyActiveStatus,
   toggleFacultyInCharge,

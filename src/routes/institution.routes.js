@@ -10,6 +10,7 @@ import {
     verifyInstitutionEmail,
     updateInstitutionAvatar,
     updateInstitution,
+    deleteInstitution,
 } from "../controllers/institution.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -43,6 +44,12 @@ router.put(
     "/update",
     validateInstitutionJWT,
     updateInstitution
+);
+
+router.delete(
+    "/delete/:institutionId",
+    validateInstitutionJWT,
+    deleteInstitution
 );
 
 export default router;

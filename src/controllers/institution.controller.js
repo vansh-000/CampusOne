@@ -7,6 +7,10 @@ import sendEmail from "../utils/sendEmail.js";
 import { cookiesOptions } from "../utils/cookiesOptions.js";
 import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
+import { Faculty } from "../models/faculty.model.js";
+import Department from "../models/department.model.js";
+import { Student } from "../models/student.model.js";
+import { Branch } from '../models/branch.model.js';
 
 const registerInstitution = asyncHandler(async (req, res) => {
   const {
@@ -388,6 +392,63 @@ const updateInstitutionAvatar = asyncHandler(async (req, res, next) => {
   streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
+const deleteInstitution = asyncHandler(async (req, res) => {
+  const { institutionId } = req.params;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const institution = await Institution.findById(institutionId).session(session);
+    if (!institution) throw new ApiError("Institution not found", 404);
+
+    // Deletion hierarchy:
+    // Institution
+    //     ├─ Branch
+    //     ├─ Department
+    //     │   └─ Course
+    //     ├─ Faculty
+    //     │   └─ User
+    //     └─ Student
+    //         └─ User
+
+    // gather userIds of students/faculty in institution
+    const facultyUserIds = await Faculty.distinct("userId", { institutionId }).session(session);
+    const studentUserIds = await Student.distinct("userId", { institutionId }).session(session);
+
+    // courses via department
+    const departments = await Department.find({ institutionId }, '_id').session(session);
+    const departmentIds = departments.map(d => d._id);
+
+    await Course.deleteMany({ departmentId: { $in: departmentIds } }).session(session);
+
+    // faculty + student delete
+    await Faculty.deleteMany({ institutionId }).session(session);
+    await Student.deleteMany({ institutionId }).session(session);
+
+    // branch + department delete
+    await Branch.deleteMany({ institutionId }).session(session);
+    await Department.deleteMany({ institutionId }).session(session);
+
+    // institution delete
+    await Institution.findByIdAndDelete(institutionId).session(session);
+
+    // delete users linked to this institution
+    await User.deleteMany({
+      _id: { $in: [...facultyUserIds, ...studentUserIds] }
+    }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json(new ApiResponse("Institution deleted successfully", 200));
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
+});
+
 export {
   registerInstitution,
   loginInstitution,
@@ -398,5 +459,6 @@ export {
   sendInstitutionEmailVerification,
   verifyInstitutionEmail,
   updateInstitutionAvatar,
-  updateInstitution
+  updateInstitution,
+  deleteInstitution
 };
