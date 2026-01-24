@@ -12,7 +12,8 @@ import {
     modifyActiveStatus,
     addCourses,
     deleteCourses,
-    deleteStudentPrevCourses
+    deleteStudentPrevCourses,
+    finishCoursesById
 } from "../controllers/student.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -46,6 +47,8 @@ router.put("/change-status/:studentId", validateInstitutionJWT, modifyActiveStat
 router.put("/student/edit/:studentId", validateUserJWT, editStudent);
 
 router.put("/student/update-hostel/:studentId", validateUserJWT, updateHostelStatus);
+
+router.put("/finsh-courses/:studentId", validateInstitutionJWT, finishCoursesById);
 
 
 // PUBLIC LAST
