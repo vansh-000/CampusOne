@@ -26,15 +26,50 @@ const assertCourseExists = async (courseId, departmentId) => {
 };
 
 const createCourse = asyncHandler(async (req, res) => {
-  const { departmentId, name, code, credits, semester } = req.body;
+  const {
+    departmentId,
+    name,
+    code,
+    credits,
+    semester,
+    evaluationScheme,
+    components
+  } = req.body;
 
   if (!departmentId || !name || !code || credits === undefined || !semester) {
-    throw new ApiError("All fields are required", 400);
+    throw new ApiError("Missing required fields", 400);
   }
+
   assertObjectId(departmentId, "departmentId");
 
   const exists = await Course.findOne({ code, departmentId });
-  if (exists) throw new ApiError("Course with this code already exists", 409);
+  if (exists) throw new ApiError("Course with code already exists", 409);
+
+  if (!["MID_END", "CT_END"].includes(evaluationScheme)) {
+    throw new ApiError("Invalid evaluationScheme", 400);
+  }
+
+  let finalComponents = components;
+
+  // Auto-add default component sets if not passed
+  if (!components || components.length === 0) {
+    if (evaluationScheme === "MID_END") {
+      finalComponents = [
+        { name: "MID", maxMarks: 30, type: "THEORY" },
+        { name: "END", maxMarks: 70, type: "THEORY" }
+      ];
+    } else {
+      finalComponents = [
+        { name: "CT1", maxMarks: 20, type: "THEORY" },
+        { name: "CT2", maxMarks: 20, type: "THEORY" },
+        { name: "END", maxMarks: 60, type: "THEORY" }
+      ];
+    }
+  }
+
+  for (const c of finalComponents) {
+    if (!c.name || !c.maxMarks) throw new ApiError("Invalid component structure", 400);
+  }
 
   const course = await Course.create({
     departmentId,
@@ -42,6 +77,8 @@ const createCourse = asyncHandler(async (req, res) => {
     code,
     credits,
     semester,
+    evaluationScheme,
+    components: finalComponents
   });
 
   res.json(new ApiResponse("Course created successfully", 201, course));
@@ -89,48 +126,50 @@ const getCourseById = asyncHandler(async (req, res) => {
 
 const updateCourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
-  const { code, departmentId, name, credits, semester } = req.body;
+  const {
+    code,
+    departmentId,
+    name,
+    credits,
+    semester,
+    evaluationScheme,
+    components
+  } = req.body;
   assertObjectId(courseId, "courseId");
 
   const course = await Course.findById(courseId);
   if (!course) throw new ApiError("Course not found", 404);
 
-  if (departmentId) {
-    assertObjectId(departmentId, "departmentId");
-
-    if (departmentId.toString() !== course.departmentId.toString()) {
-      const dept = await Department.findById(departmentId);
-      if (!dept) throw new ApiError("Invalid department", 400);
+  if (evaluationScheme && evaluationScheme !== course.evaluationScheme) {
+    const marksExist = await MarksRecord.findOne({ courseId });
+    if (marksExist) {
+      throw new ApiError("Cannot change evaluationScheme because marks exist", 400);
     }
   }
 
-  if (code || departmentId) {
-    const newCode = code ?? course.code;
-    const newDept = departmentId ?? course.departmentId;
+  if (components) {
+    if (!Array.isArray(components) || components.length === 0) {
+      throw new ApiError("Invalid components[]", 400);
+    }
 
-    const exists = await Course.findOne({
-      _id: { $ne: courseId },
-      code: newCode,
-      departmentId: newDept
-    });
+    for (const c of components) {
+      if (!c.name || !c.maxMarks) {
+        throw new ApiError("Each component must contain name & maxMarks", 400);
+      }
+    }
 
-    if (exists)
-      throw new ApiError("Course code already exists in department", 409);
+    course.components = components;
   }
 
-  if (credits !== undefined && credits < 0) {
-    throw new ApiError("Credits must be non-negative", 400);
-  }
-
-  course.name = name ?? course.name;
-  course.code = code ?? course.code;
-  course.credits = credits ?? course.credits;
-  course.semester = semester ?? course.semester;
-  course.departmentId = departmentId ?? course.departmentId;
+  if (evaluationScheme) course.evaluationScheme = evaluationScheme;
+  if (name) course.name = name;
+  if (code) course.code = code;
+  if (credits !== undefined) course.credits = credits;
+  if (semester) course.semester = semester;
+  if (departmentId) course.departmentId = departmentId;
 
   await course.save();
-
-  res.json(new ApiResponse("Course updated successfully", 200, course));
+  res.json(new ApiResponse("Course updated", 200, course));
 });
 
 const deleteCourse = asyncHandler(async (req, res) => {
@@ -185,6 +224,9 @@ const deleteCourse = asyncHandler(async (req, res) => {
     await AttendanceRecord.deleteMany({ courseId }).session(session);
     await AttendanceSession.deleteMany({ courseId }).session(session);
 
+    // Delete Marks Record
+    await MarksRecord.deleteMany({ courseId }).session(session);
+
     // Delete course itself
     await Course.findByIdAndDelete(courseId).session(session);
 
@@ -197,6 +239,30 @@ const deleteCourse = asyncHandler(async (req, res) => {
     session.endSession();
     throw err;
   }
+});
+
+const modifyStatus = asyncHandler(async (req, res) => {
+  const { courseId } = req.params;
+  const { isOpen } = req.body;
+
+  assertObjectId(courseId, "courseId");
+
+  if (isOpen === undefined) {
+    throw new ApiError("isOpen field is required", 400);
+  }
+  const course = await Course.findByIdAndUpdate(
+    courseId,
+    { isOpen },
+    { new: true }
+  );
+
+  if (!course) {
+    throw new ApiError("Course not found", 404);
+  }
+
+  res.json(
+    new ApiResponse("Course status updated successfully", 200, course)
+  );
 });
 
 const findFacultyByCourseId = asyncHandler(async (req, res) => {
