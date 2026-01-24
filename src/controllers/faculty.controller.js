@@ -307,16 +307,19 @@ const deleteFacultyPrevCourse = asyncHandler(async (req, res) => {
 
 const finishFacultyCourse = asyncHandler(async (req, res) => {
   const { facultyId, courseId } = req.params;
+  const { batch } = req.body;
 
   assertObjectId(facultyId, "facultyId");
   assertObjectId(courseId, "courseId");
+  if (!batch) throw new ApiError("batch required", 400);
 
   const objId = toObjectId(courseId);
 
   const updated = await Faculty.findOneAndUpdate(
     {
       _id: facultyId,
-      "courses.courseId": objId
+      "courses.courseId": objId,
+      "courses.batch": batch
     },
     [
       {
@@ -328,7 +331,12 @@ const finishFacultyCourse = asyncHandler(async (req, res) => {
                 $filter: {
                   input: "$courses",
                   as: "c",
-                  cond: { $eq: ["$$c.courseId", objId] }
+                  cond: {
+                    $and: [
+                      { $eq: ["$$c.courseId", objId] },
+                      { $eq: ["$$c.batch", batch] }
+                    ]
+                  }
                 }
               }
             ]
@@ -337,7 +345,14 @@ const finishFacultyCourse = asyncHandler(async (req, res) => {
             $filter: {
               input: "$courses",
               as: "c",
-              cond: { $ne: ["$$c.courseId", objId] }
+              cond: {
+                $not: {
+                  $and: [
+                    { $eq: ["$$c.courseId", objId] },
+                    { $eq: ["$$c.batch", batch] }
+                  ]
+                }
+              }
             }
           }
         }
@@ -346,9 +361,10 @@ const finishFacultyCourse = asyncHandler(async (req, res) => {
     { new: true, updatePipeline: true }
   );
 
-  if (!updated) throw new ApiError("Faculty not found or course not assigned", 404);
+  if (!updated)
+    throw new ApiError("Faculty not found or batch-course not assigned", 404);
 
-  res.json(new ApiResponse("Course moved to previous courses", 200, updated));
+  res.json(new ApiResponse("Batch course finished successfully", 200, updated));
 });
 
 const modifyActiveStatus = asyncHandler(async (req, res) => {

@@ -1,17 +1,19 @@
 import { Router } from "express";
+
 import {
-    addFacultyCourse,
     createFaculty,
-    deleteFaculty,
-    deleteFacultyCourse,
     editFaculty,
-    finishFacultyCourse,
-    getFacultiesByDepartment,
+    deleteFaculty,
     getFacultiesByInstitution,
+    getFacultiesByDepartment,
     getFacultyById,
+    updateFacultyDepartment,
+    addFacultyCourse,
+    deleteFacultyCourse,
+    deleteFacultyPrevCourse,
+    finishFacultyCourse,
     modifyActiveStatus,
-    toggleFacultyInCharge,
-    updateFacultyDepartment
+    toggleFacultyInCharge
 } from "../controllers/faculty.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -23,20 +25,27 @@ const router = Router();
 router.get("/:facultyId", getFacultyById);
 
 // Protected Routes
-router.post("/create-faculty", validateInstitutionJWT, createFaculty);
-router.put("/edit-faculty/:facultyId", validateInstitutionJWT, editFaculty);
-router.put("/edit-facultyById/:facultyId", validateUserJWT, editFaculty);
-router.get("/institution/:institutionId", validateInstitutionJWT, getFacultiesByInstitution);
-router.get("/department/:departmentId", validateInstitutionJWT, getFacultiesByDepartment);
-router.delete("/delete-faculty/:facultyId", validateInstitutionJWT, deleteFaculty);
-router.put("/update-department/:facultyId", validateInstitutionJWT, updateFacultyDepartment);
-router.put("/add-courses/faculty/:facultyId", validateInstitutionJWT, addFacultyCourse);
-router.put("/add-coursesById/faculty/:facultyId", validateUserJWT, addFacultyCourse);
-router.put("/delete-courses/faculty/:facultyId/course/:courseId", validateInstitutionJWT, deleteFacultyCourse);
-router.put("/delete-coursesById/faculty/:facultyId/course/:courseId", validateUserJWT, deleteFacultyCourse);
-router.put("/toggle-in-charge/:facultyId", validateInstitutionJWT, toggleFacultyInCharge);
-router.put("/finish-course-by-user/:facultyId/:courseId", validateUserJWT, finishFacultyCourse);
-router.put("/finish-course-by-faculty/:facultyId/:courseId", validateInstitutionJWT, finishFacultyCourse);
-router.put("/change-status/:facultyId", validateInstitutionJWT, modifyActiveStatus);
+router.post("/", validateInstitutionJWT, createFaculty);
+router.put("/:facultyId", validateInstitutionJWT, editFaculty);
+router.delete("/:facultyId", validateInstitutionJWT, deleteFaculty);
+
+router.get("/by-institution/:institutionId", validateInstitutionJWT, getFacultiesByInstitution);
+router.get("/by-department/:departmentId", validateInstitutionJWT, getFacultiesByDepartment);
+
+router.put("/:facultyId/department", validateInstitutionJWT, updateFacultyDepartment);
+router.put("/:facultyId/status", validateInstitutionJWT, modifyActiveStatus);
+router.put("/:facultyId/in-charge", validateInstitutionJWT, toggleFacultyInCharge);
+
+router.put("/:facultyId/courses", validateInstitutionJWT, addFacultyCourse);
+router.delete("/:facultyId/courses/:courseId", validateInstitutionJWT, deleteFacultyCourse);
+router.delete("/:facultyId/prev-courses/:courseId", validateInstitutionJWT, deleteFacultyPrevCourse);
+
+router.put("/:facultyId/courses/:courseId/finish", validateInstitutionJWT, finishFacultyCourse);
+
+router.put("/self/:facultyId", validateUserJWT, editFaculty);
+router.put("/self/:facultyId/courses", validateUserJWT, addFacultyCourse);
+router.delete("/self/:facultyId/courses/:courseId", validateUserJWT, deleteFacultyCourse);
+router.delete("/self/:facultyId/prev-courses/:courseId", validateUserJWT, deleteFacultyPrevCourse);
+router.put("/self/:facultyId/courses/:courseId/finish", validateUserJWT, finishFacultyCourse);
 
 export default router;

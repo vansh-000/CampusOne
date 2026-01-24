@@ -137,43 +137,66 @@ const deleteCourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
 
   assertObjectId(courseId, "courseId");
-  // TODO: remove course from faculties' courses and prevCourses arrays as well as from the student courses
-  // TODO: male prevcourse deleteion controller,
-  // TODO: make course deletion 
 
-  const course = await Course.findByIdAndDelete(courseId);
 
-  if (!course) {
-    throw new ApiError("Course not found", 404);
+  // Course (delete)
+  //   ├─ Faculty.courses[] (pull)
+  //   ├─ Faculty.prevCourses[] (pull)
+  //   ├─ Student.courseIds[] (pull)
+  //   ├─ Student.prevCourses[] (pull)
+  //   ├─ TimetableSlot (deleteMany)
+  //   ├─ AttendanceSession (deleteMany)
+  //   └─ AttendanceRecord (deleteMany)
+
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const course = await Course.findById(courseId).session(session);
+    if (!course) throw new ApiError("Course not found", 404);
+
+    // Remove from Faculty current & previous
+    await Faculty.updateMany(
+      {},
+      {
+        $pull: {
+          courses: { courseId },
+          prevCourses: { courseId }
+        }
+      }
+    ).session(session);
+
+    // Remove from Student current & previous
+    await Student.updateMany(
+      {},
+      {
+        $pull: {
+          courseIds: courseId,
+          prevCourses: { courseId }
+        }
+      }
+    ).session(session);
+
+    // Delete timetable
+    await TimetableSlot.deleteMany({ courseId }).session(session);
+
+    // Delete attendance
+    await AttendanceRecord.deleteMany({ courseId }).session(session);
+    await AttendanceSession.deleteMany({ courseId }).session(session);
+
+    // Delete course itself
+    await Course.findByIdAndDelete(courseId).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json(new ApiResponse("Course deleted successfully", 200));
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
   }
-
-  res.json(
-    new ApiResponse("Course deleted successfully", 200)
-  );
-});
-
-const modifyStatus = asyncHandler(async (req, res) => {
-  const { courseId } = req.params;
-  const { isOpen } = req.body;
-
-  assertObjectId(courseId, "courseId");
-
-  if (isOpen === undefined) {
-    throw new ApiError("isOpen field is required", 400);
-  }
-  const course = await Course.findByIdAndUpdate(
-    courseId,
-    { isOpen },
-    { new: true }
-  );
-
-  if (!course) {
-    throw new ApiError("Course not found", 404);
-  }
-
-  res.json(
-    new ApiResponse("Course status updated successfully", 200, course)
-  );
 });
 
 const findFacultyByCourseId = asyncHandler(async (req, res) => {
