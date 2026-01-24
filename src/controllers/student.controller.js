@@ -189,23 +189,49 @@ const updateStudentBranch = asyncHandler(async (req, res) => {
     );
 });
 
-// TODO: seperate it into add and remove courses
-// TODO: make deletion of course from prevcourses and courses when course is deleted
-const updateStudentCourses = asyncHandler(async (req, res) => {
+const addCourses = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { courseIds } = req.body;
 
     assertObjectId(studentId, "studentId");
 
-    if (!Array.isArray(courseIds)) {
-        throw new ApiError("courseIds must be an array", 400);
+    if (!Array.isArray(courseIds) || courseIds.length === 0) {
+        throw new ApiError("courseIds must be a non-empty array", 400);
+    }
+
+    courseIds.forEach(id => assertObjectId(id, "courseId"));
+
+    const student = await Student.findById(studentId);
+    if (!student) throw new ApiError("Student not found", 404);
+
+    for (const cid of courseIds) {
+        if (!student.courseIds.some(c => c.toString() === cid)) {
+            student.courseIds.push(cid);
+        }
+    }
+
+    await student.save();
+
+    res.json(
+        new ApiResponse("Courses added successfully", 200, student)
+    );
+});
+
+const deleteCourses = asyncHandler(async (req, res) => {
+    const { studentId } = req.params;
+    const { courseIds } = req.body;
+
+    assertObjectId(studentId, "studentId");
+
+    if (!Array.isArray(courseIds) || courseIds.length === 0) {
+        throw new ApiError("courseIds must be a non-empty array", 400);
     }
 
     courseIds.forEach(id => assertObjectId(id, "courseId"));
 
     const student = await Student.findByIdAndUpdate(
         studentId,
-        { courseIds },
+        { $pull: { courseIds: { $in: courseIds } } },
         { new: true }
     );
 
@@ -214,7 +240,38 @@ const updateStudentCourses = asyncHandler(async (req, res) => {
     }
 
     res.json(
-        new ApiResponse("Courses updated successfully", 200, student)
+        new ApiResponse("Courses removed successfully", 200, student)
+    );
+});
+
+const deleteStudentPrevCourses = asyncHandler(async (req, res) => {
+    const { studentId } = req.params;
+    const { courseIds } = req.body;
+
+    assertObjectId(studentId, "studentId");
+
+    if (!Array.isArray(courseIds) || courseIds.length === 0) {
+        throw new ApiError("courseIds must be a non-empty array", 400);
+    }
+
+    courseIds.forEach(id => assertObjectId(id, "courseId"));
+
+    const student = await Student.findByIdAndUpdate(
+        studentId,
+        {
+            $pull: {
+                prevCourses: { courseId: { $in: courseIds } }
+            }
+        },
+        { new: true }
+    );
+
+    if (!student) {
+        throw new ApiError("Student not found", 404);
+    }
+
+    res.json(
+        new ApiResponse("Previous courses removed successfully", 200, student)
     );
 });
 
@@ -328,7 +385,9 @@ export {
     getStudentById,
     deleteStudent,
     updateStudentBranch,
-    updateStudentCourses,
+    addCourses,
+    deleteCourses,
+    deleteStudentPrevCourses,
     updateStudentSemester,
     updateHostelStatus,
     modifyActiveStatus

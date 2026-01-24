@@ -6,86 +6,49 @@ import {
     getStudentsByBranch,
     getStudentsByInstitution,
     getStudentById,
-    updateStudentCourses,
     updateStudentBranch,
     updateHostelStatus,
     updateStudentSemester,
-    modifyActiveStatus
+    modifyActiveStatus,
+    addCourses,
+    deleteCourses,
+    deleteStudentPrevCourses
 } from "../controllers/student.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
 import { validateUserJWT } from "../middlewares/userAuth.middleware.js";
 
 const router = Router();
+router.post("/create-student", validateInstitutionJWT, createStudent);
 
-// public routes
+router.put("/edit-student/:studentId", validateInstitutionJWT, editStudent);
+
+router.get("/institution/:institutionId", validateInstitutionJWT, getStudentsByInstitution);
+
+router.get("/branch/:branchId", validateInstitutionJWT, getStudentsByBranch);
+
+router.delete("/delete-student/:studentId", validateInstitutionJWT, deleteStudent);
+
+router.put("/update-branch/:studentId", validateInstitutionJWT, updateStudentBranch);
+
+router.put("/add-courses/:studentId", validateInstitutionJWT, addCourses);
+
+router.put("/delete-courses/:studentId", validateInstitutionJWT, deleteCourses);
+
+router.put("/delete-prev-courses/:studentId", validateInstitutionJWT, deleteStudentPrevCourses);
+
+router.put("/update-hostel-status/:studentId", validateInstitutionJWT, updateHostelStatus);
+
+router.put("/update-semester/:studentId", validateUserJWT, updateStudentSemester);
+
+router.put("/change-status/:studentId", validateInstitutionJWT, modifyActiveStatus);
+
+router.put("/student/edit/:studentId", validateUserJWT, editStudent);
+
+router.put("/student/update-hostel/:studentId", validateUserJWT, updateHostelStatus);
+
+
+// PUBLIC LAST
 router.get("/:studentId", getStudentById);
-
-// protected routes
-router.post(
-    "/create-student",
-    validateInstitutionJWT,
-    createStudent
-);
-router.put(
-    "/edit-student/:studentId",
-    validateInstitutionJWT,
-    editStudent
-);
-router.get(
-    "/institution/:institutionId",
-    validateInstitutionJWT,
-    getStudentsByInstitution
-);
-router.get(
-    "/branch/:branchId",
-    validateInstitutionJWT,
-    getStudentsByBranch
-);
-router.delete(
-    "/delete-student/:studentId",
-    validateInstitutionJWT,
-    deleteStudent
-);
-router.put(
-    "/update-branch/:studentId",
-    validateInstitutionJWT,
-    updateStudentBranch
-);
-router.put(
-    "/update-courses/:studentId",
-    validateInstitutionJWT,
-    updateStudentCourses
-);
-router.put(
-    "/update-hostel-status/:studentId",
-    validateInstitutionJWT,
-    updateHostelStatus
-);
-router.put(
-    "/edit-studentById/:studentId",
-    validateUserJWT,
-    editStudent
-);
-router.put(
-    "/update-coursesById/:studentId",
-    validateUserJWT,
-    updateStudentCourses
-);
-router.put(
-    "/update-semester/:studentId",
-    validateUserJWT,
-    updateStudentSemester
-);
-router.put(
-    "/update-hostel-statusById/:studentId",
-    validateUserJWT,
-    updateHostelStatus
-);
-router.put(
-    "/change-status/:studentId",
-    validateInstitutionJWT,
-    modifyActiveStatus
-);
 
 export default router;
