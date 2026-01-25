@@ -11,9 +11,9 @@ import { Faculty } from '../models/faculty.model.js';
 import { Student } from '../models/student.model.js';
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, phone, password, role } = req.body;
+  const { name, email, phone, password, role, dob } = req.body;
 
-  if (!name || !email || !phone || !password || !role) {
+  if (!name || !email || !phone || !password || !role || !dob) {
     throw new ApiError("All fields are required", 400);
   }
 
@@ -32,6 +32,7 @@ const registerUser = asyncHandler(async (req, res) => {
     phone,
     password,
     role,
+    dob,
     avatar: process.env.BACKEND_URL + "/user.png",
   });
 
@@ -65,9 +66,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const accessToken = user.generateAccessToken();
-  user.accessToken = accessToken;
-  await user.save({ validateBeforeSave: false });
-
+  const refreshToken = user.generateRefreshToken();
   const loggedInUser = await User.findById(user._id).select(
     "-password -resetPasswordToken -emailVerificationToken"
   );
@@ -76,34 +75,62 @@ const loginUser = asyncHandler(async (req, res) => {
     loggedInUser.facultyDetails = facultyDetails;
   }
   const studentDetails = user.role === 'Student' ? await Student.findOne({ userId: user._id }).populate('institutionId departmentId courseIds') : null;
+  if (studentDetails) {
+    loggedInUser.studentDetails = studentDetails;
+  }
 
-  res
-    .cookie("accessToken", accessToken, cookiesOptions)
+  res.cookie("accessToken", accessToken, cookiesOptions)
+    .cookie("refreshToken", refreshToken, {
+      ...cookiesOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
     .json(
       new ApiResponse("Login successful", 200, {
-        user: loggedInUser,
-        accessToken,
+        user: loggedInUser
       })
     );
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    { $unset: { accessToken: 1 } },
-    { new: true }
-  );
 
   res
     .clearCookie("accessToken", cookiesOptions)
+    .clearCookie("refreshToken", cookiesOptions)
     .json(new ApiResponse("Logged out successfully", 200));
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) throw new ApiError("Refresh token missing", 401);
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+  } catch (err) {
+    throw new ApiError("Refresh token expired", 401);
+  }
+
+  const user = await User.findById(decoded.id).select("-password");
+  if (!user) throw new ApiError("User not found", 404);
+
+  const newAccessToken = user.generateAccessToken();
+  const newRefreshToken = user.generateRefreshToken();
+
+  res
+    .cookie("accessToken", newAccessToken, cookiesOptions)
+    .cookie("refreshToken", newRefreshToken, {
+      ...cookiesOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .json(new ApiResponse("Token refreshed", 200));
 });
 
 const updateUser = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const {
     name,
-    phone
+    phone,
+    dob // only institute admin can change dob
   } = req.body;
 
   const updates = {};
@@ -116,6 +143,10 @@ const updateUser = asyncHandler(async (req, res) => {
       throw new ApiError("Phone number already in use", 400);
     }
     updates.phone = phone;
+  }
+  // only institute admin can change dob
+  if (dob) {
+    updates.dob = dob;
   }
 
   if (Object.keys(updates).length === 0) {
@@ -173,7 +204,6 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   res.json(new ApiResponse("User deleted successfully", 200));
 });
-
 
 const forgotUserPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -343,6 +373,7 @@ export {
   registerUser,
   loginUser,
   logoutUser,
+  refreshAccessToken,
   getCurrentUser,
   deleteUser,
   forgotUserPassword,

@@ -11,6 +11,7 @@ import {
     updateInstitutionAvatar,
     updateInstitution,
     deleteInstitution,
+    refreshAccessToken,
 } from "../controllers/institution.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -22,6 +23,7 @@ const router = Router();
 
 router.post("/register", registerInstitution);
 router.post("/login", loginInstitution);
+router.post("/refresh", refreshAccessToken);
 router.post("/forgot-password", forgotInstitutionPassword);
 router.post("/reset-password/:token", resetInstitutionPassword);
 router.get("/verify-email/:token", verifyInstitutionEmail);

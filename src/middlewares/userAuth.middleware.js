@@ -4,28 +4,22 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
 export const validateUserJWT = asyncHandler(async (req, res, next) => {
-  const token =
-    req.cookies?.accessToken ||
-    req.header("Authorization")?.replace("Bearer ", "");
+  const token = req.cookies?.accessToken;
 
-  if (!token) {
-    throw new ApiError("Access token not found", 401);
-  }
+  if (!token) throw new ApiError("Token missing", 401);
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).select(
-      "-password -accessToken -resetPasswordToken -emailVerificationToken"
-    );
+    const user = await User.findById(decoded.id).select("-password -resetPasswordToken -emailVerificationToken");
+    if (!user) throw new ApiError("User not found", 401);
 
-    if (!user) {
-      throw new ApiError("Invalid access token", 401);
-    }
+    if (!user.active) throw new ApiError("User disabled", 403);
 
     req.user = user;
     next();
-  } catch (error) {
-    throw new ApiError("Invalid or expired access token", 401);
+  } catch (err) {
+    throw new ApiError("Token expired", 401);
   }
 });
+

@@ -4,9 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
 export const validateInstitutionJWT = asyncHandler(async (req, res, next) => {
-  const token =
-    req.cookies?.accessToken ||
-    req.header("Authorization")?.replace("Bearer ", "");
+  const token = req.cookies?.accessToken;
 
   if (!token) {
     throw new ApiError("Access token not found", 401);
@@ -16,7 +14,7 @@ export const validateInstitutionJWT = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const institution = await Institution.findById(decoded.id).select(
-      "-password -accessToken -resetPasswordToken -emailVerificationToken"
+      "-password -resetPasswordToken -emailVerificationToken"
     );
 
     if (!institution) {

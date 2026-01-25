@@ -102,33 +102,57 @@ const loginInstitution = asyncHandler(async (req, res) => {
   }
 
   const accessToken = institution.generateAccessToken();
-  institution.accessToken = accessToken;
-  await institution.save({ validateBeforeSave: false });
+  const refreshToken = institution.generateRefreshToken();
 
   const loggedInInstitution = await Institution.findById(institution._id)
     .select("-password -resetPasswordToken -emailVerificationToken");
 
   res
     .cookie("accessToken", accessToken, cookiesOptions)
+    .cookie("refreshToken", refreshToken, {
+      ...cookiesOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
     .json(
       new ApiResponse("Login successful", 200, {
-        institution: loggedInInstitution,
-        accessToken,
+        institution: loggedInInstitution
       })
     );
 });
 
 const logoutInstitution = asyncHandler(async (req, res) => {
-  await Institution.findByIdAndUpdate(
-    req.institution._id,
-    { $unset: { accessToken: 1 } },
-    { new: true }
-  );
 
   res
     .clearCookie("accessToken", cookiesOptions)
+    .clearCookie("refreshToken", cookiesOptions)
     .json(new ApiResponse("Logged out successfully", 200));
 });
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) throw new ApiError("Refresh token missing", 401);
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+  } catch (err) {
+    throw new ApiError("Refresh token expired", 401);
+  }
+
+  const institution = await Institution.findById(decoded.id).select("-password");
+  if (!institution) throw new ApiError("User not found", 404);
+
+  const newAccessToken = institution.generateAccessToken();
+  const newRefreshToken = institution.generateRefreshToken();
+
+  res
+    .cookie("accessToken", newAccessToken, cookiesOptions)
+    .cookie("refreshToken", newRefreshToken, {
+      ...cookiesOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .json(new ApiResponse("Token refreshed", 200));
+})
 
 const updateInstitution = asyncHandler(async (req, res) => {
   const institutionId = req.institution._id;
@@ -453,6 +477,7 @@ export {
   registerInstitution,
   loginInstitution,
   logoutInstitution,
+  refreshAccessToken,
   getCurrentInstitution,
   forgotInstitutionPassword,
   resetInstitutionPassword,

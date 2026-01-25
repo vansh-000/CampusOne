@@ -51,9 +51,6 @@ const instituitonSchema = new mongoose.Schema(
             enum: ['School', 'College', 'University', 'Institute'],
             required: true
         },
-        accessToken: {
-            type: String
-        },
         resetPasswordToken: {
             type: String,
             default: null
@@ -80,23 +77,31 @@ const instituitonSchema = new mongoose.Schema(
     }
 );
 instituitonSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+    if (!this.isModified("password")) return;
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
 });
 
 instituitonSchema.methods.isPasswordCorrect = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+    return bcrypt.compare(candidatePassword, this.password);
 };
 
 instituitonSchema.methods.generateAccessToken = function () {
-  return jwt.sign(
-    { id: this._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "100h" }
-  );
+    return jwt.sign(
+        { id: this._id },
+        process.env.JWT_SECRET,
+        { expiresIn: "10m" }
+    );
 };
+
+instituitonSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        { id: this._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "7d" }
+    );
+}
 
 instituitonSchema.methods.getResetPasswordToken = function () {
     const resetToken = crypto.randomBytes(20).toString("hex");
@@ -105,7 +110,7 @@ instituitonSchema.methods.getResetPasswordToken = function () {
     return resetToken;
 };
 
-instituitonSchema.methods.getVerificationToken  = function () {
+instituitonSchema.methods.getVerificationToken = function () {
     const verificationToken = crypto.randomBytes(20).toString("hex");
     this.emailVerificationToken = crypto.createHash("sha256").update(verificationToken).digest("hex");
     this.emailVerificationTokenExpires = Date.now() + 15 * 60 * 1000;

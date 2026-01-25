@@ -16,7 +16,11 @@ const userSchema = new mongoose.Schema(
             unique: true,
             trim: true
         },
-        // TODO: add DOB
+        // DDMMYYYY
+        dob: {
+            type: String,
+            required: true,
+        },
         password: {
             type: String,
             required: true
@@ -39,9 +43,6 @@ const userSchema = new mongoose.Schema(
         active: {
             type: Boolean,
             default: true
-        },
-        accessToken: {
-            type: String
         },
         resetPasswordToken: {
             type: String,
@@ -82,7 +83,15 @@ userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         { id: this._id },
         process.env.JWT_SECRET,
-        { expiresIn: "100h" }
+        { expiresIn: "10m" }
+    );
+};
+
+userSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        { id: this._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "7d" }
     );
 };
 
