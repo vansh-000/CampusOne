@@ -48,7 +48,7 @@ router.put("/student/edit/:studentId", validateUserJWT, editStudent);
 
 router.put("/student/update-hostel/:studentId", validateUserJWT, updateHostelStatus);
 
-router.put("/finsh-courses/:studentId", validateInstitutionJWT, finishCoursesById);
+router.put("/finish-courses/:studentId", validateInstitutionJWT, finishCoursesById);
 
 
 // PUBLIC LAST

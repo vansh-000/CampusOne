@@ -8,6 +8,8 @@ import {
   findFacultyByCourseId,
   findFacultyByPrevCourseId,
   findStudentByCourseId,
+  findStudentByInstitutionCourse,
+  findStudentByInstitutionPrevCourse,
   findStudentByPrevCourseId,
   getCourseById,
   getCourseByInstitution,
@@ -27,6 +29,8 @@ router.get("/faculty/course/:courseId/department/:departmentId/batch/:batch", fi
 router.get("/faculty/prev-course/:courseId/department/:departmentId/batch/:batch", findFacultiesByPrevCourseAndBatch);
 router.get("/student/course/:courseId/department/:departmentId", findStudentByCourseId);
 router.get("/student/prev-course/:courseId/department/:departmentId", findStudentByPrevCourseId);
+router.get("/student/course/:courseId/institution/:institutionId", findStudentByInstitutionCourse);
+router.get("/student/prev-course/:courseId/institution/:institutionId", findStudentByInstitutionPrevCourse);
 router.get("/:courseId", getCourseById);
 
 // Protected Routes

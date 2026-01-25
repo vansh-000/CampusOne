@@ -6,6 +6,7 @@ import Department from "../models/department.model.js";
 import { Faculty } from "../models/faculty.model.js";
 import mongoose from "mongoose";
 import { Student } from "../models/student.model.js";
+import { Institution } from "../models/institution.model.js";
 
 const assertObjectId = (id, field = "id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -342,15 +343,62 @@ const findFacultiesByPrevCourseAndBatch = asyncHandler(async (req, res) => {
 
 const findStudentByCourseId = asyncHandler(async (req, res) => {
   const { courseId, departmentId } = req.params;
-  await assertCourseExists(courseId, departmentId);
-  const students = await Student.find({
-    departmentId,
-    isActive: true,
-    courseIds: toObjectId(courseId)
-  }).populate("userId", "name avatar enrollmentNumber").lean();
-  if (students.length === 0) {
-    throw new ApiError("No students found for this course", 404);
+
+  assertObjectId(courseId, "courseId");
+  assertObjectId(departmentId, "departmentId");
+  const courseExists = await Course.findById(courseId);
+  if (!courseExists)
+    throw new ApiError('Course not found', 404);
+  const departmentExists = await Department.findById(departmentId);
+  if (!departmentExists)
+    throw new ApiError('Department not found', 404);
+
+  const pipeline = [
+    {
+      $lookup: {
+        from: "branches",
+        localField: "branchId",
+        foreignField: "_id",
+        as: "branch"
+      }
+    },
+    { $unwind: "$branch" },
+    {
+      $match: {
+        "branch.departmentId": new mongoose.Types.ObjectId(departmentId),
+        isActive: true,
+        courseIds: new mongoose.Types.ObjectId(courseId)
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        _id: 1,
+        enrollmentNumber: 1,
+        semester: 1,
+        "user.name": 1,
+        "user.avatar": 1,
+        "branch.name": 1,
+        "branch.code": 1
+      }
+    },
+    { $sort: { "user.name": 1 } }
+  ];
+
+  const students = await Student.aggregate(pipeline);
+
+  if (!students.length) {
+    throw new ApiError("No students found for this course under department", 404);
   }
+
   res.json(
     new ApiResponse("Students fetched successfully", 200, students)
   );
@@ -358,23 +406,110 @@ const findStudentByCourseId = asyncHandler(async (req, res) => {
 
 const findStudentByPrevCourseId = asyncHandler(async (req, res) => {
   const { courseId, departmentId } = req.params;
-  await assertCourseExists(courseId, departmentId);
-  const students = await Student.find({
-    departmentId,
-    isActive: true,
-    prevCourses: {
-      $elemMatch: {
-        courseId: toObjectId(courseId)
+
+  assertObjectId(courseId, "courseId");
+  assertObjectId(departmentId, "departmentId");
+
+  const pipeline = [
+    {
+      $lookup: {
+        from: "branches",
+        localField: "branchId",
+        foreignField: "_id",
+        as: "branch"
+      }
+    },
+    { $unwind: "$branch" },
+    {
+      $match: {
+        "branch.departmentId": new mongoose.Types.ObjectId(departmentId),
+        isActive: true,
+        prevCourses: {
+          $elemMatch: {
+            courseId: new mongoose.Types.ObjectId(courseId)
+          }
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        _id: 1,
+        enrollmentNumber: 1,
+        semester: 1,
+        "user.name": 1,
+        "user.avatar": 1,
+        "branch.name": 1,
+        "branch.code": 1
       }
     }
-  }).populate("userId", "name avatar enrollmentNumber").lean();
-  if (students.length === 0) {
-    throw new ApiError("No students found for this previous course", 404);
+  ];
+
+  const students = await Student.aggregate(pipeline);
+
+  if (!students.length) {
+    throw new ApiError("No previous students found for this course", 404);
   }
+
   res.json(
-    new ApiResponse("Students fetched successfully", 200, students)
+    new ApiResponse("Previous course students fetched", 200, students)
   );
 });
+
+const findStudentByInstitutionCourse = asyncHandler(async (req, res) => {
+  const { courseId, institutionId } = req.params;
+
+  const courseExist = await Course.findById(courseId);
+  if(!courseExist) 
+    throw new ApiError('Course do not exist',404);
+
+  const institutionExist = await Institution.findById(institutionId);
+  if(!institutionExist)
+    throw new ApiError('Institution do not exist',404);
+
+  const students = await Student.find({
+    institutionId,
+    isActive: true,
+    courseIds: toObjectId(courseId)
+  })
+  .populate("userId", "name avatar")
+  .select("enrollmentNumber semester branchId batch")
+  .lean();
+
+  if (!students.length)
+    throw new ApiError("No students found for this course", 404);
+
+  res.json(new ApiResponse("Students fetched successfully", 200, students));
+});
+
+
+const findStudentByInstitutionPrevCourse = asyncHandler(async (req, res) => {
+  const { courseId, institutionId } = req.params;
+
+  const students = await Student.find({
+    institutionId,
+    isActive: true,
+    prevCourses: { $elemMatch: { courseId: toObjectId(courseId) }}
+  })
+  .populate("userId", "name avatar")
+  .select("enrollmentNumber semester branchId batch prevCourses")
+  .lean();
+
+  if (!students.length)
+    throw new ApiError("No students found for this previous course", 404);
+
+  res.json(new ApiResponse("Students fetched successfully", 200, students));
+});
+
+
 
 export {
   createCourse,
@@ -390,4 +525,6 @@ export {
   findFacultiesByPrevCourseAndBatch,
   findStudentByCourseId,
   findStudentByPrevCourseId,
+  findStudentByInstitutionCourse,
+  findStudentByInstitutionPrevCourse
 };

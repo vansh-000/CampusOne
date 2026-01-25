@@ -13,6 +13,7 @@ import {
     updateUserAvatar,
     updateUser,
     getFacultyByUserId,
+    deleteUser,
 } from "../controllers/user.controller.js";
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
 
@@ -26,6 +27,7 @@ router.post("/reset-password/:token", resetUserPassword);
 router.get("/verify-email/:token", verifyUserEmail);
 
 // PROTECTED ROUTES
+router.delete("/delete/:userId",validateInstitutionJWT, deleteUser);
 router.get("/current-user", validateUserJWT, getCurrentUser);
 router.post("/logout", validateUserJWT, logoutUser);
 router.post(

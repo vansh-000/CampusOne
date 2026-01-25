@@ -7,7 +7,8 @@ import sendEmail from "../utils/sendEmail.js";
 import { cookiesOptions } from "../utils/cookiesOptions.js";
 import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
-import {Faculty} from '../models/faculty.model.js';
+import { Faculty } from '../models/faculty.model.js';
+import { Student } from '../models/student.model.js';
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, phone, password, role } = req.body;
@@ -148,6 +149,31 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
   res.json(new ApiResponse("User fetched successfully", 200, user));
 });
+
+const deleteUser = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  assertObjectId(userId, "userId");
+
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError("User not found", 404);
+
+  const faculty = await Faculty.findOne({ userId });
+  if (faculty) {
+    throw new ApiError("User is mapped to Faculty, delete Faculty instead", 400);
+  }
+
+  const student = await Student.findOne({ userId });
+  if (student) {
+    throw new ApiError("User is mapped to Student, delete Student instead", 400);
+  }
+
+  // TODO: delete avatar
+
+  await User.findByIdAndDelete(userId);
+
+  res.json(new ApiResponse("User deleted successfully", 200));
+});
+
 
 const forgotUserPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -318,6 +344,7 @@ export {
   loginUser,
   logoutUser,
   getCurrentUser,
+  deleteUser,
   forgotUserPassword,
   resetUserPassword,
   sendUserEmailVerification,
