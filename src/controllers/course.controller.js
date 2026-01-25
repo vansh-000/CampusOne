@@ -6,6 +6,7 @@ import Department from "../models/department.model.js";
 import { Faculty } from "../models/faculty.model.js";
 import mongoose from "mongoose";
 import { Student } from "../models/student.model.js";
+import { Institution } from "../models/institution.model.js";
 
 const assertObjectId = (id, field = "id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -345,6 +346,12 @@ const findStudentByCourseId = asyncHandler(async (req, res) => {
 
   assertObjectId(courseId, "courseId");
   assertObjectId(departmentId, "departmentId");
+  const courseExists = await Course.findById(courseId);
+  if (!courseExists)
+    throw new ApiError('Course not found', 404);
+  const departmentExists = await Department.findById(departmentId);
+  if (!departmentExists)
+    throw new ApiError('Department not found', 404);
 
   const pipeline = [
     {
@@ -457,6 +464,52 @@ const findStudentByPrevCourseId = asyncHandler(async (req, res) => {
   );
 });
 
+const findStudentByInstitutionCourse = asyncHandler(async (req, res) => {
+  const { courseId, institutionId } = req.params;
+
+  const courseExist = await Course.findById(courseId);
+  if(!courseExist) 
+    throw new ApiError('Course do not exist',404);
+
+  const institutionExist = await Institution.findById(institutionId);
+  if(!institutionExist)
+    throw new ApiError('Institution do not exist',404);
+
+  const students = await Student.find({
+    institutionId,
+    isActive: true,
+    courseIds: toObjectId(courseId)
+  })
+  .populate("userId", "name avatar")
+  .select("enrollmentNumber semester branchId batch")
+  .lean();
+
+  if (!students.length)
+    throw new ApiError("No students found for this course", 404);
+
+  res.json(new ApiResponse("Students fetched successfully", 200, students));
+});
+
+
+const findStudentByInstitutionPrevCourse = asyncHandler(async (req, res) => {
+  const { courseId, institutionId } = req.params;
+
+  const students = await Student.find({
+    institutionId,
+    isActive: true,
+    prevCourses: { $elemMatch: { courseId: toObjectId(courseId) }}
+  })
+  .populate("userId", "name avatar")
+  .select("enrollmentNumber semester branchId batch prevCourses")
+  .lean();
+
+  if (!students.length)
+    throw new ApiError("No students found for this previous course", 404);
+
+  res.json(new ApiResponse("Students fetched successfully", 200, students));
+});
+
+
 
 export {
   createCourse,
@@ -472,4 +525,6 @@ export {
   findFacultiesByPrevCourseAndBatch,
   findStudentByCourseId,
   findStudentByPrevCourseId,
+  findStudentByInstitutionCourse,
+  findStudentByInstitutionPrevCourse
 };
