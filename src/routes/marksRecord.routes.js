@@ -5,7 +5,7 @@ import {
     getStudentCourseDetail,
     getStudentMarksLine,
     recordMarks
-} from "../controllers/marksRecord.controllers.js";
+} from "../controllers/marksRecord.controller.js";
 import { validateUserJWT } from "../middlewares/userAuth.middleware.js";
 
 const router = Router();
