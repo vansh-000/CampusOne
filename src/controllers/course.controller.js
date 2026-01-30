@@ -299,7 +299,7 @@ const finishCourseForFaculties = asyncHandler(async (req, res) => {
           }
         }
       }
-    ]
+    ], { updatePipeline: true }
   );
 
   res.json(new ApiResponse(

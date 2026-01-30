@@ -30,7 +30,7 @@ router.get("/faculty/prev-course/:courseId/institution/:institutionId/batch/:bat
 router.get("/faculty/course/:courseId/institution/:institutionId", findFacultyByCourseId);
 router.get("/faculty/prev-course/:courseId/institution/:institutionId", findFacultyByPrevCourseId);
 router.get("/faculty/pull-course/:courseId/institution/:institutionId", deleteCourseAndPrevCourseFromFaculty);
-router.get("/faculty/finish-all/:courseId/department/:departmentId", finishCourseForFaculties);
+router.get("/faculty/finish-all/:courseId/institution/:institutionId", finishCourseForFaculties);
 
 router.get("/student/course/:courseId/department/:departmentId", findStudentByCourseId);
 router.get("/student/prev-course/:courseId/department/:departmentId", findStudentByPrevCourseId);
