@@ -16,7 +16,7 @@ const router = Router();
 //public routes
 router.get("/institution/:institutionId", getDepartmentsByInstitution);
 router.get("/:departmentId", getDepartmentById);
-router.get("/code-exists", validateInstitutionJWT, checkDepartmentCodeExists);
+router.post("/code-exists", validateInstitutionJWT, checkDepartmentCodeExists);
 
 //protected routes
 router.post("/create-department", validateInstitutionJWT, createDepartment);
