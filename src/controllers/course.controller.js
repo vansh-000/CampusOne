@@ -47,14 +47,14 @@ const createCourse = asyncHandler(async (req, res) => {
   if (!components || components.length === 0) {
     if (evaluationScheme === "MID_END") {
       finalComponents = [
-        { name: "MID", maxMarks: 30, type: "THEORY" },
-        { name: "END", maxMarks: 70, type: "THEORY" }
+        { name: "MID", maxMarks: 30, weightage: 100, type: "THEORY" },
+        { name: "END", maxMarks: 100, weightage: 70, type: "THEORY" }
       ];
     } else {
       finalComponents = [
-        { name: "CT1", maxMarks: 20, type: "THEORY" },
-        { name: "CT2", maxMarks: 20, type: "THEORY" },
-        { name: "END", maxMarks: 60, type: "THEORY" }
+        { name: "CT1", maxMarks: 20, weightage: 100, type: "THEORY" },
+        { name: "CT2", maxMarks: 20, weightage: 100, type: "THEORY" },
+        { name: "END", maxMarks: 100, weightage: 60, type: "THEORY" }
       ];
     }
   }
@@ -325,7 +325,7 @@ const findFacultyByCourseId = asyncHandler(async (req, res) => {
     institutionId,
     isActive: true,
     "courses.courseId": toObjectId(courseId)
-  }).populate("userId", "name avatar").lean();
+  }).populate("userId", "name avatar email phone").lean();
   if (faculties.length === 0) {
     throw new ApiError("No faculties found for this course", 404);
   }

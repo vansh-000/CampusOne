@@ -14,15 +14,15 @@ import { validateInstitutionJWT } from '../middlewares/institutionAuth.middlewar
 const router = Router();
 
 // public routes
-router.get('/institutions/:institutionId/branches', getBranchesByInstitution);
-router.get('/branches/:branchId', getBranchById);
-router.get('/departments/:departmentId/branches', getBranchByDepartment);
+router.get('/institutions/:institutionId', getBranchesByInstitution);
+router.get('/:branchId', getBranchById);
+router.get('/departments/:departmentId', getBranchByDepartment);
 
 
-router.post('/institutions/:institutionId/branches', createBranch);
-router.put('/branches/:branchId', updateBranch);
-router.delete('/branches/:branchId', deleteBranch);
-router.patch('/branches/:branchId/status', changeBranchStatus);
+router.post('/institutions/:institutionId', createBranch);
+router.put('/:branchId', updateBranch);
+router.delete('/:branchId', deleteBranch);
+router.patch('/:branchId/status', changeBranchStatus);
 router.post("/code-exists", validateInstitutionJWT, checkBranchCodeExists);
 
 export default router;
