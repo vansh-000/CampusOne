@@ -14,22 +14,22 @@ const assertObjectId = (id, fieldName = "id") => {
 };
 
 const createDepartment = asyncHandler(async (req, res) => {
-  const { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
+  let { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
 
   if (!institutionId || !name || !code || !contactEmail) {
     throw new ApiError("All fields are required", 400);
   }
   assertObjectId(institutionId, "institutionId");
-
+  code = code.trim().toUpperCase();
   if (headOfDepartment) {
     assertObjectId(headOfDepartment, "headOfDepartment");
-    const faculty = await Faculty.findById(headOfDepartment);
+    const faculty = await Faculty.findOne({_id: headOfDepartment,institutionId});
     if (!faculty) {
-      throw new ApiError("Faculty not found", 404);
+      throw new ApiError("Faculty not found in this institution", 404);
     }
 
-    const facultyExists = await Department.findOne({ headOfDepartment });
-    if (facultyExists && headOfDepartment !== null) {
+    const facultyAlreadyHOD = await Department.findOne({ headOfDepartment});
+    if (facultyAlreadyHOD) {
       throw new ApiError("This faculty is already assigned as head of another department", 409);
     }
   }
@@ -44,7 +44,7 @@ const createDepartment = asyncHandler(async (req, res) => {
     name,
     code,
     contactEmail,
-    headOfDepartment: headOfDepartment
+    headOfDepartment: headOfDepartment || null
   });
 
   res.json(
@@ -76,7 +76,7 @@ const getDepartmentById = asyncHandler(async (req, res) => {
 
 const updateDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
-  const { name, code, contactEmail } = req.body;
+  let { name, code, contactEmail } = req.body;
   assertObjectId(departmentId, "departmentId");
 
   const department = await Department.findById(departmentId);
@@ -84,6 +84,7 @@ const updateDepartment = asyncHandler(async (req, res) => {
     throw new ApiError("Department not found", 404);
   }
   if (code && code !== department.code) {
+    code = code.toUpperCase();
     const exists = await Department.findOne({
       code,
       institutionId: department.institutionId,
@@ -163,7 +164,7 @@ const checkDepartmentCodeExists = asyncHandler(async (req, res) => {
   if (!code) {
     throw new ApiError("Department code is required", 400);
   }
-
+  code = code.trim().toUpperCase();
   const exists = await Department.findOne({ code, institutionId });
 
   return res.json(
@@ -184,21 +185,16 @@ const deleteDepartment = asyncHandler(async (req, res) => {
   if (!department) {
     throw new ApiError("Department not found", 404);
   }
-  const facultyAssigned = await Faculty.findOne({ departmentId });
-  if (facultyAssigned) {
-    throw new ApiError("Cannot delete department assigned to faculty", 400);
-  }
-  const courseAssigned = await Course.findOne({ departmentId });
-  if (courseAssigned) {
-    throw new ApiError("Cannot delete department assigned to courses", 400);
-  }
-  const branchAssigned = await Branch.findOne({ departmentId });
-  if (branchAssigned) {
-    throw new ApiError("Cannot delete department assigned to branches", 400);
-  }
-    await department.deleteOne();
+  await Course.deleteMany({ departmentId });
+  await Branch.deleteMany({ departmentId });
+  await Faculty.updateMany(
+    { departmentId },
+    { $unset: { departmentId: "" }}
+  );
+  await department.deleteOne();
 
-  res.json(new ApiResponse("Department deleted successfully", 200));
+  res.json(new ApiResponse("Department and related data deleted successfully", 200)
+  );
 });
 
 export {

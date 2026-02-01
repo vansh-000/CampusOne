@@ -13,7 +13,7 @@ import { Student } from "../models/student.model.js";
 import { Branch } from '../models/branch.model.js';
 
 const registerInstitution = asyncHandler(async (req, res) => {
-  const {
+  let {
     name,
     code,
     address,
@@ -36,6 +36,7 @@ const registerInstitution = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError("All fields are required", 400);
   }
+    code = code.trim().toUpperCase();
 
   const emailExists = await Institution.findOne({ contactEmail });
   if (emailExists) {
@@ -157,7 +158,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const updateInstitution = asyncHandler(async (req, res) => {
   const institutionId = req.institution._id;
 
-  const {
+  let {
     name,
     code,
     address,
@@ -179,6 +180,7 @@ const updateInstitution = asyncHandler(async (req, res) => {
   }
 
   if (code) {
+    code = code.trim().toUpperCase();
     const codeExists = await Institution.findOne({
       code,
       _id: { $ne: institutionId }
@@ -474,13 +476,12 @@ const deleteInstitution = asyncHandler(async (req, res) => {
 });
 
 const checkInstitutionCodeExists = asyncHandler(async (req, res) => {
-  const { institutionId, code } = req.body;
-  if (!institutionId || !code) {
+  let { code } = req.body;
+  if (!code) {
     throw new ApiError("Institution code is required", 400);
   }
-
-  const exists = await Institution.findOne({ institutionId, code });
-
+  code = code.trim().toUpperCase();
+  const exists = await Institution.findOne({ code });
   res.json(
     new ApiResponse(
       exists ? "Institution code already exists" : "Institution code available",
@@ -489,6 +490,7 @@ const checkInstitutionCodeExists = asyncHandler(async (req, res) => {
     )
   );
 });
+
 
 export {
   registerInstitution,
