@@ -12,12 +12,13 @@ const assertObjectId = (id, fieldName = "id") => {
 };
 
 const createBranch = asyncHandler(async (req, res) => {
-    const { name, code, departmentId } = req.body;
+    let { name, code, departmentId } = req.body;
     const { institutionId } = req.params;
 
     if (!name || !code || !departmentId || !institutionId) {
         throw new ApiError("Missing required fields", 400);
     }
+    code = code.trim().toUpperCase();
 
     assertObjectId(institutionId, "institutionId");
     assertObjectId(departmentId, "departmentId");
@@ -78,7 +79,7 @@ const getBranchByDepartment = asyncHandler(async (req, res) => {
 
 const updateBranch = asyncHandler(async (req, res) => {
     const { branchId } = req.params;
-    const { name, code, departmentId } = req.body;
+    let { name, code, departmentId } = req.body;
 
     assertObjectId(branchId, "branchId");
 
@@ -86,6 +87,7 @@ const updateBranch = asyncHandler(async (req, res) => {
     if (!branch) throw new ApiError("Branch not found", 404);
 
     if (code) {
+        code = code.trim().toUpperCase();
         const duplicate = await Branch.findOne({
             code,
             institutionId: branch.institutionId,
@@ -160,20 +162,20 @@ const changeBranchStatus = asyncHandler(async (req, res) => {
 });
 
 const checkBranchCodeExists = asyncHandler(async (req, res) => {
-  const { institutionId, code } = req.body;
-  if (!institutionId || !code) {
-    throw new ApiError("Branch code is required", 400);
-  }
+    const { institutionId, code } = req.body;
+    if (!institutionId || !code) {
+        throw new ApiError("Branch code is required", 400);
+    }
+    code = code.trim().toUpperCase();
+    const exists = await Branch.findOne({ institutionId, code });
 
-  const exists = await Branch.findOne({ institutionId, code });
-
-  res.json(
-    new ApiResponse(
-      exists ? "Branch code already exists" : "Branch code available",
-      200,
-      { exists: !!exists }
-    )
-  );
+    res.json(
+        new ApiResponse(
+            exists ? "Branch code already exists" : "Branch code available",
+            200,
+            { exists: !!exists }
+        )
+    );
 });
 
 
