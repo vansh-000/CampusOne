@@ -16,6 +16,8 @@ import attendenceRecord from './routes/attendenceRecord.routes.js';
 import marksRoutes from './routes/marksRecord.routes.js';
 import admissionRoutes from './routes/admissionApplication.routes.js';
 import responsibilityRoutes from './routes/responsibility.routes.js';
+import assignmentRoutes from './routes/responsibilityAssignment.routes.js';
+
 const app = express();
 
 app.use(cors({
@@ -45,6 +47,7 @@ app.use('/api/attendanceRecords', attendenceRecord);
 app.use('/api/marks', marksRoutes);
 app.use('/api/admissions', admissionRoutes);
 app.use('/api/responsibility', responsibilityRoutes);
+app.use('/api/assign-responsibility',assignmentRoutes);
 
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
