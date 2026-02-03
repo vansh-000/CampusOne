@@ -20,7 +20,6 @@ const documentSchema = new Schema({
     }
 }, { _id: false });
 
-
 const admissionApplicationSchema = new mongoose.Schema({
     applicationNumber: {
         type: String,
@@ -42,6 +41,16 @@ const admissionApplicationSchema = new mongoose.Schema({
         required: true
     },
     fullName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    fatherName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    motherName: {
         type: String,
         required: true,
         trim: true

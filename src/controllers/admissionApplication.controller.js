@@ -11,12 +11,13 @@ const generateApplicationNumber = () => {
 };
 
 const registerAdmissionApplication = asyncHandler(async (req, res) => {
-
   const {
     password,
     institutionId,
     branchId,
     fullName,
+    fatherName,
+    motherName,
     email,
     phone,
     dateOfBirth,
@@ -36,7 +37,7 @@ const registerAdmissionApplication = asyncHandler(async (req, res) => {
 
   if (
     !password || !institutionId || !branchId ||
-    !fullName || !email || !phone ||
+    !fullName || !fatherName || !motherName || !email || !phone ||
     !dateOfBirth || !gender || !category ||
     !address || !city || !state || !pincode ||
     !tenthMarks || !tenthBoard || !tenthPassingYear ||
@@ -159,8 +160,7 @@ const getApplicationStatusByNumber = asyncHandler(async (req, res) => {
 
   const { applicationNumber } = req.params;
 
-  const application = await AdmissionApplication.findOne({ applicationNumber })
-    .select("formStatus eligibilityCheckResult reviewLogs updatedAt");
+  const application = await AdmissionApplication.findOne({ applicationNumber });
 
   if (!application) {
     throw new ApiError("Application not found", 404);
