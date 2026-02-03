@@ -32,7 +32,6 @@ const createCourse = asyncHandler(async (req, res) => {
   }
 
   assertObjectId(departmentId, "departmentId");
-  code = code.trim().toUpperCase();
 
   const exists = await Course.findOne({ code, departmentId });
   if (exists) throw new ApiError("Course with code already exists", 409);
@@ -155,7 +154,7 @@ const updateCourse = asyncHandler(async (req, res) => {
 
   if (evaluationScheme) course.evaluationScheme = evaluationScheme;
   if (name) course.name = name;
-  if (code) course.code = code.toUpperCase();
+  if (code) course.code = code;
   if (credits !== undefined) course.credits = credits;
   if (semester) course.semester = semester;
   if (departmentId) course.departmentId = departmentId;
@@ -661,7 +660,6 @@ const checkCourseCodeExists = asyncHandler(async (req, res) => {
   if (!departmentId || !code) {
     throw new ApiError("Course code is required", 400);
   }
-  code = code.trim().toUpperCase();
   const exists = await Course.findOne({ departmentId, code });
 
   res.json(

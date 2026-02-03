@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
 const documentSchema = new Schema({
-
     type: {
         type: String,
         required: true
@@ -42,7 +41,6 @@ const admissionApplicationSchema = new mongoose.Schema({
         ref: "Branch",
         required: true
     },
-    // ================= STUDENT BASIC DETAILS =================
     fullName: {
         type: String,
         required: true,
@@ -70,7 +68,6 @@ const admissionApplicationSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // ================= ADDRESS =================
     address: {
         type: String,
         required: true
@@ -87,7 +84,6 @@ const admissionApplicationSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // ================= ACADEMIC DETAILS =================
     tenthMarks: {
         type: Number,
         required: true
@@ -121,12 +117,10 @@ const admissionApplicationSchema = new mongoose.Schema({
     entranceRank: {
         type: Number
     },
-    // ================= DOCUMENTS =================
     documents: {
         type: [documentSchema],
         default: []
     },
-    // ================= AI RESULT =================
     eligibilityCheckResult: {
         eligible: {
             type: Boolean
@@ -136,7 +130,6 @@ const admissionApplicationSchema = new mongoose.Schema({
             type: String
         }
     },
-    // ================= SYSTEM + AI LOGS =================
     reviewLogs: {
         type: [
             {
@@ -152,7 +145,6 @@ const admissionApplicationSchema = new mongoose.Schema({
         ],
         default: []
     },
-    // ================= APPLICATION STATUS =================
     formStatus: {
         type: String,
         enum: [

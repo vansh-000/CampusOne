@@ -14,21 +14,20 @@ const assertObjectId = (id, fieldName = "id") => {
 };
 
 const createDepartment = asyncHandler(async (req, res) => {
-  let { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
+  const { institutionId, name, code, contactEmail, headOfDepartment } = req.body;
 
   if (!institutionId || !name || !code || !contactEmail) {
     throw new ApiError("All fields are required", 400);
   }
   assertObjectId(institutionId, "institutionId");
-  code = code.trim().toUpperCase();
   if (headOfDepartment) {
     assertObjectId(headOfDepartment, "headOfDepartment");
-    const faculty = await Faculty.findOne({_id: headOfDepartment,institutionId});
+    const faculty = await Faculty.findOne({ _id: headOfDepartment, institutionId });
     if (!faculty) {
       throw new ApiError("Faculty not found in this institution", 404);
     }
 
-    const facultyAlreadyHOD = await Department.findOne({ headOfDepartment});
+    const facultyAlreadyHOD = await Department.findOne({ headOfDepartment });
     if (facultyAlreadyHOD) {
       throw new ApiError("This faculty is already assigned as head of another department", 409);
     }
@@ -76,7 +75,7 @@ const getDepartmentById = asyncHandler(async (req, res) => {
 
 const updateDepartment = asyncHandler(async (req, res) => {
   const { departmentId } = req.params;
-  let { name, code, contactEmail } = req.body;
+  const { name, code, contactEmail } = req.body;
   assertObjectId(departmentId, "departmentId");
 
   const department = await Department.findById(departmentId);
@@ -84,7 +83,6 @@ const updateDepartment = asyncHandler(async (req, res) => {
     throw new ApiError("Department not found", 404);
   }
   if (code && code !== department.code) {
-    code = code.toUpperCase();
     const exists = await Department.findOne({
       code,
       institutionId: department.institutionId,
@@ -164,7 +162,6 @@ const checkDepartmentCodeExists = asyncHandler(async (req, res) => {
   if (!code) {
     throw new ApiError("Department code is required", 400);
   }
-  code = code.trim().toUpperCase();
   const exists = await Department.findOne({ code, institutionId });
 
   return res.json(
@@ -189,7 +186,7 @@ const deleteDepartment = asyncHandler(async (req, res) => {
   await Branch.deleteMany({ departmentId });
   await Faculty.updateMany(
     { departmentId },
-    { $unset: { departmentId: "" }}
+    { $unset: { departmentId: "" } }
   );
   await department.deleteOne();
 

@@ -11,9 +11,12 @@ import { Faculty } from "../models/faculty.model.js";
 import Department from "../models/department.model.js";
 import { Student } from "../models/student.model.js";
 import { Branch } from '../models/branch.model.js';
+import mongoose from "mongoose";
+import { User } from '../models/user.model.js';
+import Course from "../models/course.model.js";
 
 const registerInstitution = asyncHandler(async (req, res) => {
-  let {
+  const {
     name,
     code,
     address,
@@ -36,7 +39,6 @@ const registerInstitution = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError("All fields are required", 400);
   }
-    code = code.trim().toUpperCase();
 
   const emailExists = await Institution.findOne({ contactEmail });
   if (emailExists) {
@@ -158,7 +160,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const updateInstitution = asyncHandler(async (req, res) => {
   const institutionId = req.institution._id;
 
-  let {
+  const {
     name,
     code,
     address,
@@ -180,7 +182,6 @@ const updateInstitution = asyncHandler(async (req, res) => {
   }
 
   if (code) {
-    code = code.trim().toUpperCase();
     const codeExists = await Institution.findOne({
       code,
       _id: { $ne: institutionId }
@@ -476,11 +477,10 @@ const deleteInstitution = asyncHandler(async (req, res) => {
 });
 
 const checkInstitutionCodeExists = asyncHandler(async (req, res) => {
-  let { code } = req.body;
+  const { code } = req.body;
   if (!code) {
     throw new ApiError("Institution code is required", 400);
   }
-  code = code.trim().toUpperCase();
   const exists = await Institution.findOne({ code });
   res.json(
     new ApiResponse(
