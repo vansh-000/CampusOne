@@ -17,6 +17,7 @@ import marksRoutes from './routes/marksRecord.routes.js';
 import admissionRoutes from './routes/admissionApplication.routes.js';
 import responsibilityRoutes from './routes/responsibility.routes.js';
 import assignmentRoutes from './routes/responsibilityAssignment.routes.js';
+import applicationRoutes from './routes/application.routes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/marks', marksRoutes);
 app.use('/api/admissions', admissionRoutes);
 app.use('/api/responsibility', responsibilityRoutes);
 app.use('/api/assign-responsibility',assignmentRoutes);
+app.use('/api/application', applicationRoutes);
 
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
