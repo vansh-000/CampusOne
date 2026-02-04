@@ -17,6 +17,10 @@ const documentSchema = new Schema({
         type: String,
         enum: ["PENDING", "VERIFIED", "REJECTED"],
         default: "PENDING"
+    },
+    verifiedPercentage: {
+        type: Number,
+        default: 0,
     }
 }, { _id: false });
 
@@ -120,6 +124,9 @@ const admissionApplicationSchema = new mongoose.Schema({
     entranceExamName: {
         type: String
     },
+    enteranceExamApplicationNo: {
+        type: String,
+    },
     entranceScore: {
         type: Number
     },
@@ -129,6 +136,10 @@ const admissionApplicationSchema = new mongoose.Schema({
     documents: {
         type: [documentSchema],
         default: []
+    },
+    aadharNo: {
+        type: String,
+        required: true,
     },
     eligibilityCheckResult: {
         eligible: {

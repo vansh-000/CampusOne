@@ -32,7 +32,8 @@ const registerAdmissionApplication = asyncHandler(async (req, res) => {
     tenthPassingYear,
     twelfthMarks,
     twelfthBoard,
-    twelfthPassingYear
+    twelfthPassingYear,
+    aadharNo
   } = req.body;
 
   if (
@@ -41,8 +42,7 @@ const registerAdmissionApplication = asyncHandler(async (req, res) => {
     !dateOfBirth || !gender || !category ||
     !address || !city || !state || !pincode ||
     !tenthMarks || !tenthBoard || !tenthPassingYear ||
-    !twelfthMarks || !twelfthBoard || !twelfthPassingYear
-  ) {
+    !twelfthMarks || !twelfthBoard || !twelfthPassingYear || !aadharNo) {
     throw new ApiError("All required fields must be provided", 400);
   }
 
