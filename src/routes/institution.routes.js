@@ -13,6 +13,8 @@ import {
     deleteInstitution,
     refreshAccessToken,
     checkInstitutionCodeExists,
+    getAllInstitutions,
+    getInstitutionById,
 } from "../controllers/institution.controller.js";
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
@@ -21,7 +23,8 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
 
 // PUBLIC ROUTES
-
+router.get("/", getAllInstitutions);
+router.get("/:institutionId", getInstitutionById);
 router.post("/register", registerInstitution);
 router.post("/login", loginInstitution);
 router.post("/refresh", refreshAccessToken);
@@ -49,7 +52,6 @@ router.put(
     validateInstitutionJWT,
     updateInstitution
 );
-
 router.delete(
     "/delete/:institutionId",
     validateInstitutionJWT,
