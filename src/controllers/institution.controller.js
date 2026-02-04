@@ -250,6 +250,34 @@ const updateInstitution = asyncHandler(async (req, res) => {
   );
 });
 
+const getAllInstitutions = asyncHandler(async (req, res) => {
+  const institutions = await Institution.find();
+
+  res.json(
+    new ApiResponse(
+      "Institutions fetched successfully",
+      200,
+      institutions
+    )
+  );
+});
+
+const getInstitutionById = asyncHandler(async (req, res) => {
+  const { institutionId } = req.params;
+  const institution = await Institution.findById(institutionId);
+
+  if (!institution)
+    throw new ApiError("Institution not found", 404);
+
+  res.json(
+    new ApiResponse(
+      "Institution fetched successfully",
+      200,
+      institution
+    )
+  )
+});
+
 const getCurrentInstitution = asyncHandler(async (req, res) => {
   const institution = await Institution.findById(req.institution._id)
     .select("-password -resetPasswordToken -emailVerificationToken");
@@ -504,6 +532,8 @@ export {
   verifyInstitutionEmail,
   updateInstitutionAvatar,
   updateInstitution,
+  getAllInstitutions,
+  getInstitutionById,
   deleteInstitution,
   checkInstitutionCodeExists
 };
