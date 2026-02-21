@@ -212,11 +212,11 @@
 
 ### Responsibility Assignment (`/responsibility-assignment`)
 
-| Method | Endpoint          | Access          |
-| ------ | ----------------- | --------------- |
-| GET    | `/`               | Public          |
-| POST   | `/`               | Institution JWT |
-| PATCH  | `/:id/deactivate` | Institution JWT |
+| Method | Endpoint          | Access          | Description                          |
+| ------ | ----------------- | --------------- | ------------------------------------ |
+| GET    | `/`               | Public          | List responsibility assignments      |
+| POST   | `/`               | Institution JWT | Create a responsibility assignment   |
+| PATCH  | `/:id/deactivate` | Institution JWT | Deactivate a responsibility assignment |
 
 ---
 
