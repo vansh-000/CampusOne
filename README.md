@@ -190,12 +190,12 @@
 
 **Base Path:** `/marks`
 
-| Method | Endpoint                               | Access   |
-| ------ | -------------------------------------- | -------- |
-| POST   | `/record`                              | User JWT |
-| GET    | `/matrix`                              | User JWT |
-| GET    | `/student/:studentId/all`              | User JWT |
-| GET    | `/student/:studentId/course/:courseId` | User JWT |
+| Method | Endpoint                               | Access   | Description                                          |
+| ------ | -------------------------------------- | -------- | ---------------------------------------------------- |
+| POST   | `/record`                              | User JWT | Record or update marks/evaluation entries            |
+| GET    | `/matrix`                              | User JWT | Get aggregated marks/evaluation matrix               |
+| GET    | `/student/:studentId/all`              | User JWT | Get all marks/evaluations for a specific student     |
+| GET    | `/student/:studentId/course/:courseId` | User JWT | Get a student's marks for a specific course          |
 
 ---
 
