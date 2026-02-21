@@ -175,14 +175,14 @@
 
 **Base Path:** `/application`
 
-| Method | Endpoint                  | Access   |
-| ------ | ------------------------- | -------- |
-| POST   | `/`                       | User JWT |
-| GET    | `/my`                     | User JWT |
-| GET    | `/faculty/pending`        | User JWT |
-| POST   | `/:applicationId/approve` | User JWT |
-| POST   | `/:applicationId/reject`  | User JWT |
-| POST   | `/:applicationId/forward` | User JWT |
+| Method | Endpoint                  | Access   | Description                     |
+| ------ | ------------------------- | -------- | -------------------------------- |
+| POST   | `/`                       | User JWT | Create application               |
+| GET    | `/my`                     | User JWT | Get my applications              |
+| GET    | `/faculty/pending`        | User JWT | Pending approvals for faculty    |
+| POST   | `/:applicationId/approve` | User JWT | Approve application              |
+| POST   | `/:applicationId/reject`  | User JWT | Reject application               |
+| POST   | `/:applicationId/forward` | User JWT | Forward application to next approver |
 
 ---
 
