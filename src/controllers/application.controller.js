@@ -93,7 +93,7 @@ const approveApplication = asyncHandler(async (req, res) => {
 
     await application.save();
 
-    res.json(new ApiResponse(200, approvalNode, "Application Approved"));
+    res.json(new ApiResponse("Application Approved", 200, approvalNode));
 });
 
 const rejectApplication = asyncHandler(async (req, res) => {
