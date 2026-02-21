@@ -224,12 +224,12 @@
 
 **Base Path:** `/import`
 
-| Method | Endpoint               | Description                                    |
-| ------ | ---------------------- | ---------------------------------------------- |
-| POST   | `/students`            | Upload student CSV (async processed via Kafka) |
-| POST   | `/faculty`             | Upload faculty CSV (async processed via Kafka) |
-| GET    | `/students/:id/status` | Import status                                  |
-| GET    | `/faculty/:id/status`  | Import status                                  |
+| Method | Endpoint               | Access          | Description                                    |
+| ------ | ---------------------- | --------------- | ---------------------------------------------- |
+| POST   | `/students`            | Institution JWT | Upload student CSV (async processed via Kafka) |
+| POST   | `/faculty`             | Institution JWT | Upload faculty CSV (async processed via Kafka) |
+| GET    | `/students/:id/status` | Institution JWT | Import status                                  |
+| GET    | `/faculty/:id/status`  | Institution JWT | Import status                                  |
 
 > Large uploads are processed asynchronously using **Apache Kafka event streaming** to avoid blocking the main server and ensure reliability.
 
