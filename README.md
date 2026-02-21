@@ -136,14 +136,14 @@
 
 ### Timetable (`/timetable`)
 
-| Method | Endpoint                      | Access          |
-| ------ | ----------------------------- | --------------- |
-| GET    | `/faculty/:facultyId`         | Public          |
-| GET    | `/student/:studentId`         | Public          |
-| GET    | `/institution/:institutionId` | Public          |
-| POST   | `/slot`                       | Institution JWT |
-| PATCH  | `/slot/:slotId`               | Institution JWT |
-| DELETE | `/slot/:slotId`               | Institution JWT |
+| Method | Endpoint                      | Access          | Description                |
+| ------ | ----------------------------- | --------------- | -------------------------- |
+| GET    | `/faculty/:facultyId`         | Public          | Get timetable for faculty  |
+| GET    | `/student/:studentId`         | Public          | Get timetable for student  |
+| GET    | `/institution/:institutionId` | Public          | Get timetable for institution |
+| POST   | `/slot`                       | Institution JWT | Create a timetable slot    |
+| PATCH  | `/slot/:slotId`               | Institution JWT | Update a timetable slot    |
+| DELETE | `/slot/:slotId`               | Institution JWT | Delete a timetable slot    |
 
 ### Attendance Sessions (`/session`)
 
