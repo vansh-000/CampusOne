@@ -105,14 +105,14 @@
 
 ### Branch (`/branch`)
 
-| Method | Endpoint                       | Access |
-| ------ | ------------------------------ | ------ |
-| GET    | `/institutions/:institutionId` | Public |
-| GET    | `/:branchId`                   | Public |
-| GET    | `/departments/:departmentId`   | Public |
-| POST   | `/institutions/:institutionId` | Public |
-| PUT    | `/:branchId`                   | Public |
-| DELETE | `/:branchId`                   | Public |
+| Method | Endpoint                       | Access          |
+| ------ | ------------------------------ | --------------- |
+| GET    | `/institutions/:institutionId` | Public          |
+| GET    | `/:branchId`                   | Public          |
+| GET    | `/departments/:departmentId`   | Public          |
+| POST   | `/institutions/:institutionId` | Institution JWT |
+| PUT    | `/:branchId`                   | Institution JWT |
+| DELETE | `/:branchId`                   | Institution JWT |
 
 ---
 
