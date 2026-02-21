@@ -147,13 +147,13 @@
 
 ### Attendance Sessions (`/session`)
 
-| Method | Endpoint              | Access          |
-| ------ | --------------------- | --------------- |
-| GET    | `/faculty/:facultyId` | Public          |
-| GET    | `/student/:studentId` | Public          |
-| POST   | `/generate`           | Institution JWT |
-| PATCH  | `/:sessionId/cancel`  | User JWT        |
-| DELETE | `/:sessionId`         | User JWT        |
+| Method | Endpoint              | Access          | Description                     |
+| ------ | --------------------- | --------------- | ------------------------------- |
+| GET    | `/faculty/:facultyId` | Public          | List sessions for a faculty     |
+| GET    | `/student/:studentId` | Public          | List sessions for a student     |
+| POST   | `/generate`           | Institution JWT | Generate new attendance session |
+| PATCH  | `/:sessionId/cancel`  | User JWT        | Cancel an attendance session    |
+| DELETE | `/:sessionId`         | User JWT        | Delete an attendance session    |
 
 ---
 
