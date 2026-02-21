@@ -95,13 +95,13 @@
 
 ### Department (`/department`)
 
-| Method | Endpoint                           | Access          |
-| ------ | ---------------------------------- | --------------- |
-| GET    | `/institution/:institutionId`      | Public          |
-| GET    | `/:departmentId`                   | Public          |
-| POST   | `/create-department`               | Institution JWT |
-| PUT    | `/update-department/:departmentId` | Institution JWT |
-| DELETE | `/delete-department/:departmentId` | Institution JWT |
+| Method | Endpoint                           | Access          | Description                   |
+| ------ | ---------------------------------- | --------------- | ----------------------------- |
+| GET    | `/institution/:institutionId`      | Public          | Get departments by institution |
+| GET    | `/:departmentId`                   | Public          | Get department by ID          |
+| POST   | `/create-department`               | Institution JWT | Create department             |
+| PUT    | `/update-department/:departmentId` | Institution JWT | Update department             |
+| DELETE | `/delete-department/:departmentId` | Institution JWT | Delete department             |
 
 ### Branch (`/branch`)
 
