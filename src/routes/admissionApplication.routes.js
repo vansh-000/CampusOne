@@ -20,10 +20,11 @@ import {
 } from "../controllers/admissionApplication.controller.js";
 import { validateAdmissionJWT } from "../middlewares/admissionAuth.middleware.js";
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
+import { authLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 const router = express.Router();
 router.post("/register", registerAdmissionApplication);
-router.post("/login", loginAdmissionApplication);
+router.post("/login",authLimiter, loginAdmissionApplication);
 router.post("/forgot-password", forgotAdmissionPassword);
 router.post("/reset-password/:token", resetAdmissionPassword);
 router.get("/verify-email/:token", verifyAdmissionEmail);

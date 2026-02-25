@@ -19,6 +19,7 @@ import {
 
 import { validateInstitutionJWT } from "../middlewares/institutionAuth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { authLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ const router = Router();
 router.get("/", getAllInstitutions);
 router.get("/:institutionId", getInstitutionById);
 router.post("/register", registerInstitution);
-router.post("/login", loginInstitution);
+router.post("/login",authLimiter, loginInstitution);
 router.post("/refresh", refreshAccessToken);
 router.post("/forgot-password", forgotInstitutionPassword);
 router.post("/reset-password/:token", resetInstitutionPassword);
