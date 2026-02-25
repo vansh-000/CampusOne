@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import jwt from "jsonwebtoken";
 
 const documentSchema = new Schema({
     type: {

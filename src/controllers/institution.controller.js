@@ -14,6 +14,7 @@ import { Branch } from '../models/branch.model.js';
 import mongoose from "mongoose";
 import { User } from '../models/user.model.js';
 import Course from "../models/course.model.js";
+import jwt from "jsonwebtoken";
 
 const registerInstitution = asyncHandler(async (req, res) => {
   const {

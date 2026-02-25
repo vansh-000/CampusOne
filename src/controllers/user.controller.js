@@ -10,6 +10,7 @@ import streamifier from "streamifier";
 import { Faculty } from '../models/faculty.model.js';
 import { Student } from '../models/student.model.js';
 import assertObjectId from '../utils/assertObjectId.js';
+import  jwt  from 'jsonwebtoken';
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, phone, password, role, dob } = req.body;
