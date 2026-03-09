@@ -1,9 +1,9 @@
-import { Notice } from "../models/notice.model";
-import cloudinary from "../utils/cloudinary";
+import { Notice } from "../models/notice.model.js";
+import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
-import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const parseBodyField = (value, fallback = undefined) => {
     if (value === undefined || value === null || value === "") {
